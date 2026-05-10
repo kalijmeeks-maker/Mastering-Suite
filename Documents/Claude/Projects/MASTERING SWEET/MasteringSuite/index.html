@@ -1,0 +1,1063 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>SWEET — Mastering Suite</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=Inter+Tight:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root{
+    /* Dark theme (default) */
+    --bg-0:#07070a;
+    --bg-1:#0d0d12;
+    --bg-2:#13131a;
+    --bg-3:#1a1a23;
+    --line:#23232d;
+    --line-2:#2c2c38;
+    --text-dim:#52525c;
+    --text:#a8a8b4;
+    --text-bright:#ebebf2;
+    --accent:#c4ff3d;
+    --accent-soft:rgba(196,255,61,.14);
+    --accent-glow:rgba(196,255,61,.5);
+    --cyan:#3fe5ff;
+    --magenta:#ff3d80;
+    --amber:#ffb547;
+    --danger:#ff4d4d;
+    --shadow-inset: inset 0 1px 0 rgba(255,255,255,.04);
+  }
+  .theme-light{
+    --bg-0:#e9e9ec;
+    --bg-1:#f5f5f7;
+    --bg-2:#fbfbfd;
+    --bg-3:#ffffff;
+    --line:#dcdce2;
+    --line-2:#c8c8d0;
+    --text-dim:#9a9aa6;
+    --text:#54545e;
+    --text-bright:#1a1a22;
+    --accent:#5fa800;
+    --accent-soft:rgba(95,168,0,.12);
+    --accent-glow:rgba(95,168,0,.35);
+    --cyan:#0093b6;
+    --magenta:#d11960;
+    --amber:#c47800;
+    --danger:#d63636;
+    --shadow-inset: inset 0 1px 0 rgba(255,255,255,.7);
+  }
+
+  *{box-sizing:border-box}
+  html,body{margin:0;padding:0;height:100%;background:#000;overflow:hidden;
+    font-family:'Inter Tight',ui-sans-serif,system-ui,sans-serif;color:var(--text);
+    -webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility}
+  body{display:flex;align-items:center;justify-content:center;padding:18px;
+    background:radial-gradient(ellipse at 50% 30%, #14141a 0%, #050507 70%)}
+
+  .plugin{
+    width:100%;height:100%;max-width:1280px;max-height:760px;min-width:880px;min-height:540px;
+    background:var(--bg-0);
+    border:1px solid var(--line);
+    border-radius:10px;
+    box-shadow:
+      0 1px 0 rgba(255,255,255,.04) inset,
+      0 30px 80px -20px rgba(0,0,0,.7),
+      0 0 0 1px rgba(0,0,0,.4);
+    display:grid;
+    grid-template-rows: 44px 44px 1fr 156px 56px;
+    overflow:hidden;
+    position:relative;
+    font-size:11px;
+    letter-spacing:.01em;
+  }
+
+  .mono{font-family:'JetBrains Mono',ui-monospace,Menlo,monospace;font-variant-numeric:tabular-nums}
+  .tnum{font-variant-numeric:tabular-nums}
+  .micro{font-size:9px;letter-spacing:.14em;text-transform:uppercase;color:var(--text-dim);font-weight:600}
+  .label{font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:var(--text-dim);font-weight:600}
+
+  button{font-family:inherit;color:inherit;background:transparent;border:0;cursor:default;padding:0;letter-spacing:inherit}
+  button:focus{outline:none}
+
+  /* Header */
+  .header{
+    display:flex;align-items:stretch;justify-content:space-between;
+    border-bottom:1px solid var(--line);
+    background:linear-gradient(to bottom, var(--bg-1), var(--bg-0));
+    padding:0 12px;gap:14;
+  }
+  .header-brand{display:flex;align-items:center;gap:10}
+  .header-logo{
+    width:24;height:24;border-radius:6;
+    background:radial-gradient(circle at 35% 30%, var(--accent), color-mix(in oklab, var(--accent), #000 40%));
+    box-shadow:0 0 12px var(--accent-glow), inset 0 -2px 4px rgba(0,0,0,.4);
+    display:flex;align-items:center;justify-content:center;
+    color:#000;font-weight:800;font-size:11;letter-spacing:-.02em;
+  }
+  .header-title{display:flex;flex-direction:column;line-height:1}
+  .header-title-main{font-size:13;font-weight:800;letter-spacing:.08em;color:var(--text-bright)}
+  .header-title-sub{font-size:7.5;margin-top:2;text-transform:uppercase;color:var(--text-dim);letter-spacing:.14em}
+
+  .preset-bar{flex:1;display:flex;align-items:center;justify-content:center}
+  .preset-selector{
+    display:flex;align-items:stretch;background:var(--bg-2);border:1px solid var(--line);
+    border-radius:5; height:28; max-width:420;width:100%;
+  }
+  .preset-nav{padding:0 10px;border-right:1px solid var(--line);color:var(--text);cursor:pointer;font-size:11}
+  .preset-content{
+    flex:1;display:flex;align-items:center;justify-content:space-between;
+    padding:0 12px;gap:8;
+  }
+  .preset-name{color:var(--text-bright);font-size:11;font-weight:600;letter-spacing:.02em}
+  .preset-counter{font-size:9;color:var(--text-dim)}
+
+  .header-right{display:flex;align-items:center;gap:6}
+  .ab-toggle{display:flex;background:var(--bg-2);border:1px solid var(--line);border-radius:4;overflow:hidden}
+  .ab-btn{
+    padding:5px 10px;font-size:10;font-weight:700;letter-spacing:.06em;cursor:pointer;
+    background:transparent;color:var(--text-dim);
+  }
+  .ab-btn.active{background:var(--accent-soft);color:var(--accent)}
+  .icon-btn{
+    width:24;height:24;border-radius:4;background:var(--bg-2);border:1px solid var(--line);
+    color:var(--text-dim);cursor:pointer;font-size:12;display:inline-flex;align-items:center;justify-content:center;
+  }
+
+  /* Module strip */
+  .module-strip{
+    display:grid;grid-template-columns:repeat(5, 1fr) 1.1fr;
+    border-bottom:1px solid var(--line);
+    background:var(--bg-1);
+  }
+  .module-btn{
+    border-right:1px solid var(--line);
+    padding:6px 10px;cursor:pointer;position:relative;
+    display:flex;align-items:center;gap:10;
+    background:transparent;color:var(--text);
+  }
+  .module-btn.active{background:var(--bg-2);color:var(--text-bright)}
+  .module-slot{font-size:9;color:var(--text-dim);width:14;text-align:left;font-weight:600;font-family:'JetBrains Mono',monospace}
+  .module-btn.active .module-slot{color:var(--accent)}
+  .module-info{display:flex;flex-direction:column;align-items:flex-start;flex:1;line-height:1.1}
+  .module-name{font-size:11;font-weight:600;letter-spacing:.05em}
+  .module-status{font-size:8;margin-top:3;color:var(--text-dim)}
+  .module-btn.active .module-status{color:var(--accent)}
+  .module-meter{width:3;height:28;background:var(--bg-3);border-radius:1;position:relative;overflow:hidden}
+  .module-meter-fill{
+    position:absolute;left:0;right:0;top:0;
+    background:var(--amber);box-shadow:0 0 4px var(--amber);
+  }
+  .module-active-bar{
+    position:absolute;left:0;right:0;bottom:0;height:2;background:var(--accent);
+    box-shadow:0 0 6px var(--accent);
+  }
+  .master-section{
+    display:flex;align-items:center;gap:10;padding:0 14px;background:var(--bg-2);
+  }
+  .master-logo{
+    width:18;height:18;border-radius:50%;
+    background:radial-gradient(circle at 35% 30%, var(--accent), #000);
+    box-shadow:0 0 8px var(--accent-glow);
+  }
+  .master-title{line-height:1.1}
+  .master-label{font-size:9;text-transform:uppercase;color:var(--text-dim);font-weight:600;letter-spacing:.08em}
+  .master-name{font-size:11;font-weight:700;color:var(--text-bright)}
+  .master-bar{flex:1;height:4;background:var(--bg-3);border:1px solid var(--line);border-radius:2;position:relative;overflow:hidden}
+  .master-bar-fill{position:absolute;top:0;bottom:0;left:0;
+    background:linear-gradient(to right, color-mix(in oklab, var(--accent), #000 40%), var(--accent));
+    box-shadow:0 0 6px var(--accent-glow)}
+  .master-value{font-size:10;color:var(--text-bright);min-width:24;text-align:right;font-weight:600;font-family:'JetBrains Mono',monospace}
+
+  /* Main canvas */
+  .main-canvas{position:relative;background:var(--bg-0);overflow:hidden;
+    background-image:radial-gradient(ellipse at 50% 50%, rgba(40,40,55,.4) 0%, transparent 70%)}
+  canvas{display:block;position:absolute;inset:0}
+  .canvas-svg{position:absolute;inset:0;pointer-events:none}
+
+  .canvas-overlay{position:absolute;top:8;left:10;display:flex;align-items:center;gap:6;
+    background:rgba(13,13,18,.7);backdrop-filter:blur(8px);
+    padding:4px 8px;border-radius:4;border:1px solid var(--line);
+  }
+  .canvas-indicator{width:5;height:5;border-radius:50%;background:var(--accent);box-shadow:0 0 4px var(--accent)}
+  .canvas-label{font-size:8;color:var(--text-bright);text-transform:uppercase;letter-spacing:.14em}
+
+  .canvas-controls{position:absolute;top:8;right:10;display:flex;gap:6;align-items:center}
+  .canvas-btn{width:22;height:22;font-size:10;border-radius:4;background:var(--bg-2);border:1px solid var(--line);
+    color:var(--text-dim);cursor:pointer;display:inline-flex;align-items:center;justify-content:center;}
+  .canvas-btn.post{background:var(--accent-soft);color:var(--accent);border-color:var(--accent)}
+
+  /* Control deck */
+  .control-deck{
+    border-top:1px solid var(--line);border-bottom:1px solid var(--line);
+    background:linear-gradient(to bottom, var(--bg-1), var(--bg-0));
+    display:flex;padding:14px 16px;gap:24;align-items:center;overflow-x:auto;
+  }
+
+  /* Knob */
+  .knob-wrapper{display:flex;flex-direction:column;align-items:center;gap:4;user-select:none;cursor:ns-resize}
+  .knob-label{font-size:9;margin-top:1;text-transform:uppercase;color:var(--text-dim);font-weight:600;letter-spacing:.08em}
+  .knob-value{font-size:10;color:var(--text-bright);margin-top:-2;font-weight:600;font-family:'JetBrains Mono',monospace}
+
+  /* Toggle */
+  .toggle{
+    display:inline-flex;align-items:center;gap:6;
+    padding:4px 8px;background:var(--bg-2);border:1px solid var(--line);border-radius:4;
+    color:var(--text);font-size:10;letter-spacing:.06em;text-transform:uppercase;font-weight:600;
+    cursor:pointer;transition:all .12s;
+  }
+  .toggle.active{background:var(--accent-soft);border-color:var(--accent);color:var(--accent)}
+  .toggle-dot{width:6;height:6;border-radius:50%;background:var(--line-2)}
+  .toggle.active .toggle-dot{background:var(--accent);box-shadow:0 0 6px var(--accent)}
+
+  /* Pill button */
+  .pill-btn{
+    padding:5px 10px;background:transparent;border:1px solid var(--line);border-radius:4;
+    color:var(--text);font-size:10;letter-spacing:.08em;text-transform:uppercase;font-weight:600;
+    cursor:pointer;transition:all .12s;
+  }
+  .pill-btn.active{background:var(--accent-soft);border-color:var(--accent);color:var(--accent)}
+
+  /* Level meter */
+  .level-meter{display:flex;gap:2;align-items:flex-end}
+  .meter-col{display:flex;flex-direction:column-reverse;gap:1;background:var(--bg-2);border:1px solid var(--line);border-radius:2;overflow:hidden}
+  .meter-seg{background:rgba(255,255,255,.025);border-radius:1}
+  .meter-seg.on{background:var(--accent);box-shadow:0 0 4px var(--accent)}
+  .meter-seg.on.amber{background:var(--amber);box-shadow:0 0 4px var(--amber)}
+  .meter-seg.on.danger{background:var(--danger);box-shadow:0 0 4px var(--danger)}
+
+  /* Footer */
+  .footer{
+    border-top:1px solid var(--line);background:var(--bg-1);
+    display:flex;align-items:stretch;gap:12;padding:0 14px;
+  }
+
+  .meter-block{display:flex;align-items:center;gap:6;padding:4px 0}
+  .meter-label{display:flex;flex-direction:column;gap:2;align-items:flex-end;line-height:1}
+  .meter-name{font-size:9;text-transform:uppercase;color:var(--text-dim);font-weight:600;letter-spacing:.08em}
+  .meter-db{font-size:9;color:var(--text-dim);font-family:'JetBrains Mono',monospace}
+
+  .lufs-display{display:flex;align-items:center;gap:14;flex:1;justify-content:center}
+  .lufs-value-block{display:flex;flex-direction:column;align-items:flex-end;line-height:1}
+  .lufs-label{font-size:9;text-transform:uppercase;color:var(--text-dim);font-weight:600;letter-spacing:.08em}
+  .lufs-value{font-size:22;color:var(--text-bright);font-weight:600;letter-spacing:-.02em;margin-top:2;font-family:'JetBrains Mono',monospace}
+  .lufs-graph{flex-shrink:0}
+  .lufs-stats{display:flex;flex-direction:column;gap:2;font-size:9;color:var(--text-dim);font-family:'JetBrains Mono',monospace}
+  .lufs-stat-val{color:var(--text)}
+
+  .correlation{display:flex;flex-direction:column;justify-content:center;gap:4;min-width:96}
+  .corr-label{display:flex;justify-content:space-between;font-size:8;color:var(--text-dim);font-family:'JetBrains Mono',monospace;letter-spacing:.06em}
+  .corr-value{font-size:10;color:var(--text-bright);text-align:center;font-family:'JetBrains Mono',monospace}
+
+  .hbar{width:100%;position:relative}
+  .hbar-track{height:6;background:var(--bg-2);border:1px solid var(--line);border-radius:2;position:relative;overflow:hidden}
+  .hbar-fill{position:absolute;top:0;bottom:0;background:var(--accent);box-shadow:0 0 4px var(--accent)}
+  .hbar-center{position:absolute;top:0;bottom:0;left:50%;width:1;background:var(--line-2)}
+</style>
+</head>
+<body>
+<div id="root"></div>
+
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+
+<script type="text/babel">
+const { useState, useEffect, useRef, useCallback, useMemo } = React;
+
+// ─────────────────────────────────────────── helpers ──────────────────────
+const clamp = (v, lo, hi) => Math.max(lo, Math.min(hi, v));
+const lerp  = (a, b, t) => a + (b - a) * t;
+const fmt = (v, d = 1, suffix = '') => {
+  const sign = v > 0 ? '+' : '';
+  return `${sign}${v.toFixed(d)}${suffix}`;
+};
+const fmtFreq = (hz) => {
+  if (hz >= 1000) return (hz / 1000).toFixed(hz >= 10000 ? 1 : 2).replace(/\.?0+$/, '') + 'k';
+  return Math.round(hz) + '';
+};
+const FMIN = 20, FMAX = 20000;
+const freqToX = (hz, w) => (Math.log(hz / FMIN) / Math.log(FMAX / FMIN)) * w;
+const xToFreq = (x,  w) => FMIN * Math.pow(FMAX / FMIN, x / w);
+
+// ─────────────────────────────────────────── useAnimationFrame ──────────────
+function useAnimationFrame(callback, deps = []) {
+  const cbRef = useRef(callback);
+  cbRef.current = callback;
+  useEffect(() => {
+    let id, last = performance.now();
+    const tick = (now) => {
+      const dt = (now - last) / 1000; last = now;
+      cbRef.current(now / 1000, dt);
+      id = requestAnimationFrame(tick);
+    };
+    id = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(id);
+  }, deps);
+}
+
+// ─────────────────────────────────────────── useDrag ──────────────────────
+function useDrag({ onStart, onMove, onEnd, sensitivity = 1, fine = 4 } = {}) {
+  const stateRef = useRef(null);
+  const onMouseDown = useCallback((e) => {
+    e.preventDefault();
+    const start = { x: e.clientX, y: e.clientY };
+    stateRef.current = start;
+    onStart?.(e);
+    document.body.style.cursor = 'ns-resize';
+    const onM = (ev) => {
+      const dy = (start.y - ev.clientY);
+      const dx = (ev.clientX - start.x);
+      const factor = ev.shiftKey ? 1 / fine : 1;
+      onMove?.({ dy: dy * sensitivity * factor, dx: dx * sensitivity * factor, ev });
+    };
+    const onU = (ev) => {
+      document.removeEventListener('mousemove', onM);
+      document.removeEventListener('mouseup', onU);
+      document.body.style.cursor = '';
+      stateRef.current = null;
+      onEnd?.(ev);
+    };
+    document.addEventListener('mousemove', onM);
+    document.addEventListener('mouseup', onU);
+  }, [onStart, onMove, onEnd, sensitivity, fine]);
+  return onMouseDown;
+}
+
+// ─────────────────────────────────────────── Knob ─────────────────────────
+function Knob({ value, min = 0, max = 1, defaultValue, size = 56, label, unit = '', format, onChange, color, bipolar = false, step = null, arcWidth = 3 }) {
+  const accent = color || 'var(--accent)';
+  const range = max - min;
+  const valStart = useRef(value);
+  const onDown = useDrag({
+    onStart: () => { valStart.current = value; },
+    onMove: ({ dy }) => {
+      let v = valStart.current + (dy / 140) * range;
+      v = clamp(v, min, max);
+      if (step) v = Math.round(v / step) * step;
+      onChange?.(v);
+    },
+  });
+  const onDouble = () => { if (defaultValue !== undefined) onChange?.(defaultValue); };
+
+  const t = (value - min) / range;
+  const SWEEP = 270;
+  const START = -135 + 90;
+  const angle = START + t * SWEEP;
+  const r = size / 2 - arcWidth - 2;
+  const cx = size / 2, cy = size / 2;
+  const rad = (a) => (a - 90) * Math.PI / 180;
+
+  const arcStart = START;
+  const arcEnd = bipolar ? (START + 0.5 * SWEEP + (t - 0.5) * SWEEP) : angle;
+  const arcA0 = bipolar ? START + 0.5 * SWEEP : arcStart;
+  const a0 = Math.min(arcA0, arcEnd), a1 = Math.max(arcA0, arcEnd);
+  const large = (a1 - a0) > 180 ? 1 : 0;
+  const sweep = 1;
+  const p0 = { x: cx + r * Math.cos(rad(a0)), y: cy + r * Math.sin(rad(a0)) };
+  const p1 = { x: cx + r * Math.cos(rad(a1)), y: cy + r * Math.sin(rad(a1)) };
+  const arcD = `M ${p0.x} ${p0.y} A ${r} ${r} 0 ${large} ${sweep} ${p1.x} ${p1.y}`;
+
+  const bgStart = { x: cx + r * Math.cos(rad(arcStart)), y: cy + r * Math.sin(rad(arcStart)) };
+  const bgEndA = arcStart + SWEEP;
+  const bgEnd = { x: cx + r * Math.cos(rad(bgEndA)), y: cy + r * Math.sin(rad(bgEndA)) };
+  const bgD = `M ${bgStart.x} ${bgStart.y} A ${r} ${r} 0 1 1 ${bgEnd.x} ${bgEnd.y}`;
+
+  const indR1 = r - 7, indR2 = r - 2;
+  const indA = angle;
+  const ix1 = cx + indR1 * Math.cos(rad(indA));
+  const iy1 = cy + indR1 * Math.sin(rad(indA));
+  const ix2 = cx + indR2 * Math.cos(rad(indA));
+  const iy2 = cy + indR2 * Math.sin(rad(indA));
+
+  const display = format ? format(value) : fmt(value, 1, unit);
+
+  return (
+    <div onMouseDown={onDown} onDoubleClick={onDouble} className="knob-wrapper" style={{cursor:'ns-resize'}}>
+      <svg width={size} height={size} style={{overflow:'visible'}}>
+        <defs>
+          <radialGradient id={`kg-${label}`} cx="50%" cy="42%" r="55%">
+            <stop offset="0%"  stopColor="var(--bg-3)" />
+            <stop offset="100%" stopColor="var(--bg-1)" />
+          </radialGradient>
+        </defs>
+        <path d={bgD} fill="none" stroke="var(--line)" strokeWidth={arcWidth} strokeLinecap="round" />
+        <path d={arcD} fill="none" stroke={accent} strokeWidth={arcWidth} strokeLinecap="round"
+          style={{filter:`drop-shadow(0 0 4px ${accent})`}} />
+        <circle cx={cx} cy={cy} r={r - 5} fill={`url(#kg-${label})`} stroke="var(--line-2)" strokeWidth="1" />
+        <circle cx={cx} cy={cy} r={r - 5} fill="none" stroke="rgba(255,255,255,.03)" strokeWidth="1"
+          transform={`translate(0,-1)`} />
+        <line x1={ix1} y1={iy1} x2={ix2} y2={iy2} stroke={accent} strokeWidth="2" strokeLinecap="round"
+          style={{filter:`drop-shadow(0 0 3px ${accent})`}} />
+      </svg>
+      {label && <div className="knob-label">{label}</div>}
+      <div className="knob-value">{display}</div>
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────── Toggle ──────────────────────
+function Toggle({ value, onChange, label, color }) {
+  const accent = color || 'var(--accent)';
+  return (
+    <button onClick={() => onChange?.(!value)} className={`toggle ${value ? 'active' : ''}`}
+      style={{ borderColor: value ? accent : 'var(--line)', boxShadow: value ? `0 0 8px ${accent}55, inset 0 0 0 1px ${accent}22` : 'none' }}>
+      <span className="toggle-dot" style={{ background: value ? accent : 'var(--line-2)', boxShadow: value ? `0 0 6px ${accent}` : 'none' }} />
+      {label}
+    </button>
+  );
+}
+
+// ─────────────────────────────────────────── PillButton ────────────────────
+function PillButton({ children, active, onClick, color, style }) {
+  const accent = color || 'var(--accent)';
+  return (
+    <button onClick={onClick} className={`pill-btn ${active ? 'active' : ''}`} style={{
+      borderColor: active ? accent : 'var(--line)',
+      color: active ? accent : 'var(--text)',
+      ...style,
+    }}>{children}</button>
+  );
+}
+
+// ─────────────────────────────────────────── LevelMeter ──────────────────
+function LevelMeter({ values = [0], width = 8, height = 100, segments = 32 }) {
+  const segH = (height - segments + 1) / segments;
+  return (
+    <div className="level-meter">
+      {values.map((v, i) => {
+        const fill = clamp(v, 0, 1);
+        return (
+          <div key={i} className="meter-col" style={{ width, height }}>
+            {Array.from({length:segments}).map((_, s) => {
+              const segIdx = segments - 1 - s;
+              const segT = (segIdx + 1) / segments;
+              const on = fill >= segT - 0.001;
+              let color = 'var(--accent)';
+              if (segT > 0.9) color = 'var(--danger)';
+              else if (segT > 0.78) color = 'var(--amber)';
+              return (
+                <div key={s} className={`meter-seg ${on ? 'on' : ''} ${on && color.includes('amber') ? 'amber' : ''} ${on && color.includes('danger') ? 'danger' : ''}`}
+                  style={{ height: segH, opacity: on ? 1 : 1, background: on ? color : 'rgba(255,255,255,.025)' }} />
+              );
+            })}
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────── HBar ───────────────────────
+function HBar({ value, min = -1, max = 1, color, height = 4, width = 100, bipolar = true }) {
+  const t = (value - min) / (max - min);
+  const accent = color || 'var(--accent)';
+  return (
+    <div className="hbar" style={{width}}>
+      <div className="hbar-track" style={{height}}>
+        {bipolar ? (
+          <div className="hbar-fill" style={{
+            left: t < 0.5 ? `${t*100}%` : '50%',
+            right: t > 0.5 ? `${(1-t)*100}%` : '50%',
+            background: accent, boxShadow:`0 0 4px ${accent}`,
+          }} />
+        ) : (
+          <div className="hbar-fill" style={{
+            width:`${t*100}%`, background:accent, boxShadow:`0 0 4px ${accent}`,
+          }} />
+        )}
+        {bipolar && <div className="hbar-center" />}
+      </div>
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────── state ──────────────────────────
+function initialState() {
+  return {
+    bands: [
+      { id:1, freq:32,    gain:-0.5, q:0.7, type:'hpf',   on:true,  color:'#7a7aff' },
+      { id:2, freq:120,   gain:1.2,  q:0.9, type:'lshelf',on:true,  color:'#3fe5ff' },
+      { id:3, freq:480,   gain:-1.6, q:1.4, type:'bell',  on:true,  color:'#c4ff3d' },
+      { id:4, freq:2400,  gain:0.8,  q:1.2, type:'bell',  on:true,  color:'#ffb547' },
+      { id:5, freq:8200,  gain:2.4,  q:0.8, type:'hshelf',on:true,  color:'#ff3d80' },
+      { id:6, freq:18000, gain:-1.0, q:0.7, type:'lpf',   on:false, color:'#a0a0b0' },
+    ],
+    dyn: { threshold:-18, ratio:2.4, attack:14, release:120, knee:6, makeup:1.2, mix:100 },
+    sat: { drive:18, character:35, lo:0, hi:8, mix:60 },
+    img: { width:115, bass:30, splitFreq:180, rotation:0 },
+    lim: { ceiling:-1.0, gain:2.8, release:60, style:'transparent', tp:true },
+    master: { in:0, out:0, sweetness:50, bypass:false, ab:'A' },
+  };
+}
+
+// ─────────────────────────────────────────── fake audio ──────────────────
+function useFakeAudio() {
+  const state = useRef({
+    bins: new Float32Array(96),
+    peaks: new Float32Array(96),
+    inL: 0, inR: 0, outL: 0, outR: 0,
+    inPeakL: 0, inPeakR: 0, outPeakL: 0, outPeakR: 0,
+    lufs: -14.2, lufsHistory: new Float32Array(120),
+    lufsIdx: 0,
+    gr: 0, dynGr: 0, corr: 0.32, t: 0,
+  });
+  const [, setTick] = useState(0);
+
+  useAnimationFrame((time, dt) => {
+    const s = state.current;
+    s.t = time;
+    for (let i = 0; i < s.bins.length; i++) {
+      const f = FMIN * Math.pow(FMAX / FMIN, i / (s.bins.length - 1));
+      const pink = -10 - 8 * Math.log10(Math.max(f, 20) / 20);
+      let bump = 0;
+      const formants = [
+        { f: 60 + Math.sin(time * 0.7) * 8,  g: 8,  q: 0.4 },
+        { f: 220 + Math.sin(time * 1.3) * 30, g: 6,  q: 0.6 },
+        { f: 900 + Math.sin(time * 0.4 + 1) * 200, g: 4, q: 0.7 },
+        { f: 2400 + Math.sin(time * 0.9 + 2) * 600, g: 5, q: 0.8 },
+        { f: 6500 + Math.sin(time * 0.6 + 3) * 1500, g: 3, q: 0.9 },
+      ];
+      for (const fm of formants) {
+        const x = Math.log2(f / fm.f);
+        bump += fm.g * Math.exp(-(x * x) * (fm.q * fm.q * 3));
+      }
+      const noise = (Math.sin(time * 9 + i * 1.3) + Math.sin(time * 13.7 + i * 0.7)) * 0.7;
+      const dBVal = pink + bump + noise;
+      const v = clamp((dBVal + 60) / 60, 0, 1);
+      s.bins[i] = lerp(s.bins[i], v, clamp(dt * 18, 0, 1));
+      if (s.bins[i] > s.peaks[i]) s.peaks[i] = s.bins[i];
+      else s.peaks[i] = Math.max(0, s.peaks[i] - dt * 0.35);
+    }
+    const beat = 0.5 + 0.5 * Math.sin(time * 5.2);
+    const beat2 = 0.5 + 0.5 * Math.sin(time * 5.2 + 0.4);
+    const targetIn = 0.55 + beat * 0.25 + (Math.sin(time * 11) * 0.08);
+    const targetIn2 = 0.55 + beat2 * 0.25 + (Math.sin(time * 13) * 0.08);
+    s.inL = lerp(s.inL, targetIn,  clamp(dt * 16, 0, 1));
+    s.inR = lerp(s.inR, targetIn2, clamp(dt * 16, 0, 1));
+    s.outL = clamp(s.inL * 1.05, 0, 0.96);
+    s.outR = clamp(s.inR * 1.05, 0, 0.96);
+    s.inPeakL = Math.max(s.inPeakL - dt * 0.4, s.inL);
+    s.inPeakR = Math.max(s.inPeakR - dt * 0.4, s.inR);
+    s.outPeakL = Math.max(s.outPeakL - dt * 0.4, s.outL);
+    s.outPeakR = Math.max(s.outPeakR - dt * 0.4, s.outR);
+    const targetLufs = -14 + Math.sin(time * 0.4) * 1.2 + Math.sin(time * 0.13) * 0.8;
+    s.lufs = lerp(s.lufs, targetLufs, clamp(dt * 1.2, 0, 1));
+    s.lufsIdx = (s.lufsIdx + 1) % s.lufsHistory.length;
+    s.lufsHistory[s.lufsIdx] = s.lufs;
+    s.gr = clamp(2 + Math.sin(time * 4.7) * 2 + Math.max(0, Math.sin(time * 9) - 0.6) * 4, 0, 8);
+    s.dynGr = clamp(1.5 + Math.sin(time * 3.1) * 1.2, 0, 4);
+    s.corr = 0.3 + Math.sin(time * 0.6) * 0.25;
+    if (Math.floor(time * 30) !== Math.floor((time - dt) * 30)) {
+      setTick((x) => (x + 1) % 1e9);
+    }
+  }, []);
+
+  return state;
+}
+
+// ─────────────────────────────────────────── EQ response ──────────────────
+function eqResponseDb(bands, freq) {
+  let total = 0;
+  for (const b of bands) {
+    if (!b.on) continue;
+    const f = freq, f0 = b.freq, q = b.q, g = b.gain;
+    const r = f / f0;
+    if (b.type === 'hpf') {
+      const n = 1 / (1 + Math.pow(r, -4));
+      total += 20 * Math.log10(Math.max(n, 1e-6));
+    } else if (b.type === 'lpf') {
+      const n = 1 / (1 + Math.pow(r, 4));
+      total += 20 * Math.log10(Math.max(n, 1e-6));
+    } else if (b.type === 'lshelf') {
+      const x = Math.log2(f / f0);
+      const w = 1 / (1 + Math.exp(x * q * 3));
+      total += g * w;
+    } else if (b.type === 'hshelf') {
+      const x = Math.log2(f / f0);
+      const w = 1 / (1 + Math.exp(-x * q * 3));
+      total += g * w;
+    } else {
+      const x = Math.log2(f / f0);
+      const w = Math.exp(-(x * x) * (q * q * 2.4));
+      total += g * w;
+    }
+  }
+  return total;
+}
+
+// ─────────────────────────────────────────── Header ──────────────────────
+const MODULE_LIST = [
+  { id:'eq',    name:'EQUALIZER', short:'EQ' },
+  { id:'dyn',   name:'DYNAMICS',  short:'DYN' },
+  { id:'sat',   name:'HARMONICS', short:'SAT' },
+  { id:'img',   name:'IMAGER',    short:'IMG' },
+  { id:'lim',   name:'LIMITER',   short:'LIM' },
+];
+
+const PRESETS = [
+  'INIT', 'Honey Glaze', 'Sugar Bus', 'Caramel Glue', 'Salt & Pepper',
+  'Sour Pop', 'Vanilla Air', 'Bittersweet', 'Maple Warmth', 'Marshmallow',
+  'Black Liquorice', 'Brown Butter',
+];
+
+function Header({ st, setSt, presetIdx, setPresetIdx }) {
+  const presetName = PRESETS[presetIdx];
+  return (
+    <div className="header">
+      <div className="header-brand">
+        <div className="header-logo">S</div>
+        <div className="header-title">
+          <div className="header-title-main">SWEET</div>
+          <div className="header-title-sub">MASTERING SUITE · v2.4</div>
+        </div>
+      </div>
+
+      <div className="preset-bar">
+        <div className="preset-selector">
+          <button className="preset-nav" onClick={() => setPresetIdx((presetIdx - 1 + PRESETS.length) % PRESETS.length)}>‹</button>
+          <div className="preset-content">
+            <span className="label">PRESET</span>
+            <span className="preset-name">{presetName}</span>
+            <span className="preset-counter mono">{String(presetIdx+1).padStart(2,'0')}/{String(PRESETS.length).padStart(2,'0')}</span>
+          </div>
+          <button className="preset-nav" onClick={() => setPresetIdx((presetIdx + 1) % PRESETS.length)}>›</button>
+        </div>
+      </div>
+
+      <div className="header-right">
+        <div className="ab-toggle">
+          {['A','B'].map(k => (
+            <button key={k} className={`ab-btn ${st.master.ab===k ? 'active' : ''}`}
+              onClick={() => setSt(s => ({...s,master:{...s.master,ab:k}}))}>
+              {k}
+            </button>
+          ))}
+        </div>
+        <PillButton active={st.master.bypass} color="var(--amber)"
+          onClick={() => setSt(s => ({...s,master:{...s.master,bypass:!s.master.bypass}}))}>
+          Bypass
+        </PillButton>
+        <div style={{display:'flex',gap:2}}>
+          <button className="icon-btn" title="Undo">↶</button>
+          <button className="icon-btn" title="Redo">↷</button>
+          <button className="icon-btn" title="Settings">⚙</button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────── Module strip ──────────────────
+function ModuleStrip({ activeModule, setActiveModule, st, audio }) {
+  return (
+    <div className="module-strip">
+      {MODULE_LIST.map((m, i) => {
+        const active = activeModule === m.id;
+        const reduction = m.id === 'dyn' ? audio.current.dynGr : m.id === 'lim' ? audio.current.gr : 0;
+        const reductionT = clamp(reduction / 6, 0, 1);
+        return (
+          <button key={m.id} className={`module-btn ${active ? 'active' : ''}`}
+            onClick={() => setActiveModule(m.id)}>
+            <div className="module-slot mono">0{i+1}</div>
+            <div className="module-info">
+              <div className="module-name">{m.name}</div>
+              <div className="module-status micro">
+                {reduction > 0.05 ? `−${reduction.toFixed(1)}dB` : 'ACTIVE'}
+              </div>
+            </div>
+            <div className="module-meter">
+              <div className="module-meter-fill" style={{ height:`${reductionT*100}%` }} />
+            </div>
+            {active && <div className="module-active-bar" />}
+          </button>
+        );
+      })}
+      <div className="master-section">
+        <div className="master-logo" />
+        <div className="master-title">
+          <div className="master-label">MASTER</div>
+          <div className="master-name">SWEETNESS</div>
+        </div>
+        <div className="master-bar">
+          <div className="master-bar-fill" style={{ width:`${st.master.sweetness}%` }} />
+        </div>
+        <span className="master-value mono">{st.master.sweetness}</span>
+      </div>
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────── Main canvas ──────────────────
+function MainCanvas({ st, setSt, audio, activeModule }) {
+  const wrapRef = useRef(null);
+  const canvasRef = useRef(null);
+  const [size, setSize] = useState({ w: 800, h: 280 });
+  const [dragBand, setDragBand] = useState(null);
+
+  useEffect(() => {
+    const el = wrapRef.current;
+    if (!el) return;
+    const ro = new ResizeObserver(entries => {
+      const r = entries[0].contentRect;
+      setSize({ w: Math.floor(r.width), h: Math.floor(r.height) });
+    });
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, []);
+
+  useEffect(() => {
+    const c = canvasRef.current; if (!c) return;
+    const dpr = window.devicePixelRatio || 1;
+    const w = size.w, h = size.h;
+    c.width = w * dpr; c.height = h * dpr;
+    c.style.width = w + 'px'; c.style.height = h + 'px';
+    const ctx = c.getContext('2d'); ctx.scale(dpr, dpr); ctx.clearRect(0,0,w,h);
+
+    const cs = getComputedStyle(document.documentElement);
+    const colLine = cs.getPropertyValue('--line').trim() || '#23232d';
+    const colDim = cs.getPropertyValue('--text-dim').trim() || '#52525c';
+    const colAccent = cs.getPropertyValue('--accent').trim() || '#c4ff3d';
+
+    ctx.strokeStyle = colLine; ctx.lineWidth = 1;
+    ctx.font = '9px "JetBrains Mono", monospace'; ctx.fillStyle = colDim;
+    const dbRange = [-18, -12, -6, 0, 6, 12, 18];
+    for (const db of dbRange) {
+      const y = h/2 - (db / 18) * (h/2 - 16);
+      ctx.globalAlpha = db === 0 ? 0.55 : 0.25;
+      ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(w, y); ctx.stroke();
+      ctx.globalAlpha = 0.7;
+      ctx.fillText((db>0?'+':'')+db, 4, y - 2);
+    }
+    ctx.globalAlpha = 1;
+
+    const freqMarks = [30, 100, 300, 1000, 3000, 10000];
+    ctx.fillStyle = colDim;
+    for (const f of freqMarks) {
+      const x = freqToX(f, w);
+      ctx.globalAlpha = 0.25;
+      ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, h); ctx.stroke();
+      ctx.globalAlpha = 0.7;
+      ctx.fillText(fmtFreq(f) + (f >= 1000 ? '' : 'Hz'), x + 3, h - 4);
+    }
+    ctx.globalAlpha = 1;
+
+    const bins = audio.current.bins;
+    const peaks = audio.current.peaks;
+    const top = 4, bot = h - 4;
+    const usable = bot - top;
+
+    ctx.beginPath();
+    ctx.moveTo(0, bot);
+    for (let i = 0; i < bins.length; i++) {
+      const f = FMIN * Math.pow(FMAX / FMIN, i / (bins.length - 1));
+      const x = freqToX(f, w);
+      const y = bot - bins[i] * usable * 0.92;
+      if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+    }
+    ctx.lineTo(w, bot); ctx.closePath();
+    const grad = ctx.createLinearGradient(0, top, 0, bot);
+    grad.addColorStop(0, 'rgba(140,140,170,.42)');
+    grad.addColorStop(1, 'rgba(80,80,110,.04)');
+    ctx.fillStyle = grad; ctx.fill();
+
+    ctx.beginPath();
+    for (let i = 0; i < bins.length; i++) {
+      const f = FMIN * Math.pow(FMAX / FMIN, i / (bins.length - 1));
+      const x = freqToX(f, w);
+      const y = bot - bins[i] * usable * 0.92;
+      if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+    }
+    ctx.strokeStyle = 'rgba(180,180,200,.55)'; ctx.lineWidth = 1; ctx.stroke();
+
+    ctx.beginPath();
+    for (let i = 0; i < peaks.length; i++) {
+      const f = FMIN * Math.pow(FMAX / FMIN, i / (peaks.length - 1));
+      const x = freqToX(f, w);
+      const y = bot - peaks[i] * usable * 0.92;
+      if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+    }
+    ctx.strokeStyle = 'rgba(220,220,230,.18)'; ctx.lineWidth = 1; ctx.stroke();
+
+    const samples = 256;
+    ctx.beginPath();
+    for (let i = 0; i <= samples; i++) {
+      const f = FMIN * Math.pow(FMAX / FMIN, i / samples);
+      const db = eqResponseDb(st.bands, f);
+      const x = freqToX(f, w);
+      const y = h/2 - (db / 18) * (h/2 - 16);
+      if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+    }
+    const zeroY = h/2;
+    ctx.lineTo(w, zeroY); ctx.lineTo(0, zeroY); ctx.closePath();
+    ctx.fillStyle = colAccent + '14'; ctx.fill();
+
+    ctx.beginPath();
+    for (let i = 0; i <= samples; i++) {
+      const f = FMIN * Math.pow(FMAX / FMIN, i / samples);
+      const db = eqResponseDb(st.bands, f);
+      const x = freqToX(f, w);
+      const y = h/2 - (db / 18) * (h/2 - 16);
+      if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+    }
+    ctx.strokeStyle = colAccent; ctx.lineWidth = 2;
+    ctx.shadowColor = colAccent; ctx.shadowBlur = 8;
+    ctx.stroke();
+    ctx.shadowBlur = 0;
+
+    if (activeModule === 'eq') {
+      for (const b of st.bands) {
+        if (!b.on) continue;
+        const samples = 128;
+        ctx.beginPath();
+        for (let i = 0; i <= samples; i++) {
+          const f = FMIN * Math.pow(FMAX / FMIN, i / samples);
+          const db = eqResponseDb([b], f);
+          const x = freqToX(f, w);
+          const y = h/2 - (db / 18) * (h/2 - 16);
+          if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+        }
+        ctx.strokeStyle = b.color + '55'; ctx.lineWidth = 1; ctx.stroke();
+      }
+    }
+  }, [size, st.bands, audio.current.bins[0], activeModule]);
+
+  const onBandDown = (band, e) => {
+    e.preventDefault(); e.stopPropagation();
+    const rect = wrapRef.current.getBoundingClientRect();
+    setDragBand(band.id);
+    const onMove = (ev) => {
+      const x = clamp(ev.clientX - rect.left, 0, rect.width);
+      const y = clamp(ev.clientY - rect.top, 0, rect.height);
+      const f = clamp(xToFreq(x, rect.width), 20, 20000);
+      const db = clamp(- (y - rect.height/2) / (rect.height/2 - 16) * 18, -18, 18);
+      const isFilter = band.type === 'hpf' || band.type === 'lpf';
+      setSt(s => ({
+        ...s,
+        bands: s.bands.map(bb => bb.id === band.id
+          ? { ...bb, freq: f, gain: isFilter ? bb.gain : db }
+          : bb)
+      }));
+    };
+    const onUp = () => {
+      document.removeEventListener('mousemove', onMove);
+      document.removeEventListener('mouseup', onUp);
+      setDragBand(null);
+    };
+    document.addEventListener('mousemove', onMove);
+    document.addEventListener('mouseup', onUp);
+  };
+
+  return (
+    <div ref={wrapRef} className="main-canvas">
+      <canvas ref={canvasRef} />
+      <svg width={size.w} height={size.h} className="canvas-svg">
+        {st.bands.map(b => {
+          const x = freqToX(b.freq, size.w);
+          const isFilter = b.type === 'hpf' || b.type === 'lpf';
+          const y = isFilter ? size.h - 22 : size.h/2 - (b.gain / 18) * (size.h/2 - 16);
+          const isDrag = dragBand === b.id;
+          return (
+            <g key={b.id} style={{pointerEvents:'auto',cursor:'grab',opacity: b.on ? 1 : 0.35}}
+              onMouseDown={(e) => onBandDown(b, e)}>
+              {isDrag && <circle cx={x} cy={y} r={18} fill={b.color} opacity={0.15} />}
+              <circle cx={x} cy={y} r={isDrag ? 9 : 7} fill={b.color}
+                stroke={isDrag ? '#fff' : 'rgba(0,0,0,.5)'} strokeWidth={isDrag ? 2 : 1}
+                style={{filter:`drop-shadow(0 0 ${isDrag ? 8 : 4}px ${b.color})`}} />
+              <text x={x} y={y + 3} textAnchor="middle" fill="#000"
+                fontSize="8" fontWeight="700" fontFamily="JetBrains Mono"
+                style={{pointerEvents:'none'}}>{b.id}</text>
+            </g>
+          );
+        })}
+      </svg>
+      <div className="canvas-overlay">
+        <div className="canvas-indicator" />
+        <span className="canvas-label">{MODULE_LIST.find(m=>m.id===activeModule)?.name} VIEW</span>
+      </div>
+      <div className="canvas-controls">
+        <button className="canvas-btn" title="Pre/Post">PRE</button>
+        <button className="canvas-btn post" title="Post">POST</button>
+        <button className="canvas-btn" title="L+R / L / R / M / S">L+R</button>
+      </div>
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────── Control deck ──────────────────
+function ControlDeck({ st, setSt, activeModule, audio }) {
+  if (activeModule === 'eq') {
+    return (
+      <div className="control-deck">
+        {st.bands.map(b => {
+          const set = (k, v) => setSt(s => ({ ...s, bands: s.bands.map(bb => bb.id===b.id ? {...bb, [k]: v} : bb)}));
+          const types = ['hpf','lshelf','bell','hshelf','lpf'];
+          const typeLabel = { hpf:'HP', lshelf:'LS', bell:'BELL', hshelf:'HS', lpf:'LP' };
+          return (
+            <div key={b.id} style={{display:'flex',flexDirection:'column',alignItems:'center',gap:4,padding:'6px 8px 8px',borderRadius:5,background: b.on ? 'var(--bg-2)' : 'transparent',border:'1px solid', borderColor: b.on ? 'var(--line)' : 'transparent',opacity: b.on ? 1 : 0.5,minWidth:74}}>
+              <div style={{display:'flex',alignItems:'center',gap:5,marginBottom:2}}>
+                <button onClick={() => set('on', !b.on)} style={{width:14,height:14,border-radius:'50%',background: b.on ? b.color : 'var(--bg-3)',boxShadow: b.on ? `0 0 6px ${b.color}` : 'none',border:'1px solid', borderColor: b.on ? b.color : 'var(--line)',color:'#000',fontSize:8,fontWeight:800,cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center'}}>{b.id}</button>
+                <select value={b.type} onChange={(e) => set('type', e.target.value)} style={{background:'var(--bg-3)',border:'1px solid var(--line)',color:'var(--text)',fontSize:9,fontFamily:'JetBrains Mono',padding:'1px 2px',borderRadius:3,cursor:'pointer',letterSpacing:'.04em'}}>
+                  {types.map(t => <option key={t} value={t}>{typeLabel[t]}</option>)}
+                </select>
+              </div>
+              <Knob value={b.freq} min={20} max={20000} size={42} label="FREQ" color={b.color} format={(v)=>fmtFreq(v)+'Hz'} onChange={(v)=>set('freq', Math.round(v))} />
+              <Knob value={b.gain} min={-18} max={18} size={42} label="GAIN" bipolar color={b.color} format={(v)=>fmt(v,1,'dB')} defaultValue={0} onChange={(v)=>set('gain', v)} />
+              <Knob value={b.q} min={0.1} max={6} size={42} label="Q" color={b.color} format={(v)=>v.toFixed(2)} onChange={(v)=>set('q', v)} />
+            </div>
+          );
+        })}
+      </div>
+    );
+  }
+
+  if (activeModule === 'dyn') {
+    const set = (k,v) => setSt(s => ({...s, dyn: {...s.dyn, [k]: v}}));
+    return (
+      <div className="control-deck">
+        <Knob size={60} value={st.dyn.threshold} min={-40} max={0} label="THRESH" format={(v)=>fmt(v,1,' dB')} defaultValue={-18} onChange={(v)=>set('threshold',v)} />
+        <Knob size={60} value={st.dyn.ratio} min={1} max={20} label="RATIO" format={(v)=>v.toFixed(1)+':1'} defaultValue={2.4} onChange={(v)=>set('ratio',v)} />
+        <Knob size={60} value={st.dyn.attack} min={0.1} max={200} label="ATTACK" format={(v)=>v.toFixed(1)+' ms'} defaultValue={14} onChange={(v)=>set('attack',v)} />
+        <Knob size={60} value={st.dyn.release} min={20} max={2000} label="RELEASE" format={(v)=>Math.round(v)+' ms'} defaultValue={120} onChange={(v)=>set('release',v)} />
+        <Knob size={60} value={st.dyn.knee} min={0} max={24} label="KNEE" format={(v)=>v.toFixed(1)+' dB'} onChange={(v)=>set('knee',v)} />
+        <Knob size={60} value={st.dyn.makeup} min={0} max={24} label="MAKEUP" color="var(--cyan)" format={(v)=>fmt(v,1,' dB')} onChange={(v)=>set('makeup',v)} />
+        <Knob size={60} value={st.dyn.mix} min={0} max={100} label="MIX" color="var(--cyan)" format={(v)=>Math.round(v)+'%'} defaultValue={100} onChange={(v)=>set('mix',v)} />
+      </div>
+    );
+  }
+
+  if (activeModule === 'sat') {
+    const set = (k,v) => setSt(s => ({...s, sat: {...s.sat, [k]: v}}));
+    return (
+      <div className="control-deck">
+        <Knob size={64} value={st.sat.drive} min={0} max={100} label="DRIVE" color="var(--magenta)" format={(v)=>Math.round(v)+'%'} onChange={(v)=>set('drive',v)} />
+        <Knob size={64} value={st.sat.character} min={0} max={100} label="CHARACTER" color="var(--magenta)" format={(v)=>v < 33 ? 'TUBE' : v < 66 ? 'TAPE' : 'XFMR'} onChange={(v)=>set('character',v)} />
+        <Knob size={64} value={st.sat.lo} min={-12} max={12} label="LOW TILT" bipolar defaultValue={0} format={(v)=>fmt(v,1,' dB')} onChange={(v)=>set('lo',v)} />
+        <Knob size={64} value={st.sat.hi} min={-12} max={12} label="HIGH TILT" bipolar defaultValue={0} format={(v)=>fmt(v,1,' dB')} onChange={(v)=>set('hi',v)} />
+        <Knob size={64} value={st.sat.mix} min={0} max={100} label="MIX" color="var(--cyan)" format={(v)=>Math.round(v)+'%'} defaultValue={100} onChange={(v)=>set('mix',v)} />
+      </div>
+    );
+  }
+
+  if (activeModule === 'img') {
+    const set = (k,v) => setSt(s => ({...s, img: {...s.img, [k]: v}}));
+    return (
+      <div className="control-deck">
+        <Knob size={64} value={st.img.width} min={0} max={200} label="WIDTH" defaultValue={100} color="var(--cyan)" format={(v)=>Math.round(v)+'%'} onChange={(v)=>set('width',v)} />
+        <Knob size={64} value={st.img.bass} min={0} max={100} label="BASS MONO" color="var(--cyan)" format={(v)=>Math.round(v)+'%'} onChange={(v)=>set('bass',v)} />
+        <Knob size={64} value={st.img.splitFreq} min={60} max={500} label="SPLIT" color="var(--cyan)" format={(v)=>Math.round(v)+' Hz'} onChange={(v)=>set('splitFreq',v)} />
+        <Knob size={64} value={st.img.rotation} min={-45} max={45} label="ROTATE" bipolar defaultValue={0} color="var(--cyan)" format={(v)=>fmt(v,1,'°')} onChange={(v)=>set('rotation',v)} />
+      </div>
+    );
+  }
+
+  if (activeModule === 'lim') {
+    const set = (k,v) => setSt(s => ({...s, lim: {...s.lim, [k]: v}}));
+    return (
+      <div className="control-deck">
+        <Knob size={68} value={st.lim.gain} min={0} max={24} label="GAIN" color="var(--accent)" format={(v)=>fmt(v,1,' dB')} onChange={(v)=>set('gain',v)} />
+        <Knob size={68} value={st.lim.ceiling} min={-6} max={0} label="CEILING" color="var(--amber)" format={(v)=>fmt(v,2,' dB')} onChange={(v)=>set('ceiling',v)} />
+        <Knob size={68} value={st.lim.release} min={1} max={500} label="RELEASE" format={(v)=>Math.round(v)+' ms'} onChange={(v)=>set('release',v)} />
+      </div>
+    );
+  }
+
+  return <div className="control-deck" />;
+}
+
+// ─────────────────────────────────────────── Footer ──────────────────────
+function Footer({ st, audio }) {
+  const a = audio.current;
+  const lufsPath = useMemo(() => {
+    const hist = a.lufsHistory;
+    const n = hist.length;
+    let d = '';
+    for (let i = 0; i < n; i++) {
+      const idx = (a.lufsIdx + 1 + i) % n;
+      const v = hist[idx] || -23;
+      const t = clamp((v + 30) / 30, 0, 1);
+      const x = (i / (n - 1)) * 100;
+      const y = (1 - t) * 100;
+      d += (i === 0 ? 'M' : 'L') + x.toFixed(1) + ',' + y.toFixed(1) + ' ';
+    }
+    return d;
+  }, [a.lufsIdx, a.lufs]);
+
+  const dbL = 20 * Math.log10(Math.max(a.inL, 0.001));
+  const dbR = 20 * Math.log10(Math.max(a.inR, 0.001));
+
+  return (
+    <div className="footer">
+      <div className="meter-block">
+        <div className="meter-label">
+          <span className="meter-name">INPUT</span>
+          <span className="meter-db mono">L {dbL.toFixed(1)}</span>
+          <span className="meter-db mono">R {dbR.toFixed(1)}</span>
+        </div>
+        <LevelMeter values={[a.inL, a.inR]} width={6} height={44} segments={20} />
+      </div>
+
+      <div className="lufs-display">
+        <div className="lufs-value-block">
+          <span className="lufs-label">LUFS-I</span>
+          <span className="lufs-value">{a.lufs.toFixed(1)}</span>
+        </div>
+        <svg width="120" height="36" viewBox="0 0 100 100" preserveAspectRatio="none" className="lufs-graph">
+          <line x1="0" y1="50" x2="100" y2="50" stroke="var(--line)" strokeWidth="0.5" />
+          <line x1="0" y1="33" x2="100" y2="33" stroke="var(--line)" strokeDasharray="2 2" strokeWidth="0.4" />
+          <path d={lufsPath} fill="none" stroke="var(--accent)" strokeWidth="1.2" vectorEffect="non-scaling-stroke" style={{filter:'drop-shadow(0 0 2px var(--accent))'}} />
+        </svg>
+        <div className="lufs-stats">
+          <div className="mono">SHORT <span className="lufs-stat-val">{(a.lufs - 0.4).toFixed(1)}</span></div>
+          <div className="mono">MOM&nbsp;&nbsp; <span className="lufs-stat-val">{(a.lufs + 0.8).toFixed(1)}</span></div>
+          <div className="mono">RANGE <span className="lufs-stat-val">4.2 LU</span></div>
+        </div>
+        <div className="lufs-stats">
+          <div className="mono">TP&nbsp;&nbsp;&nbsp; <span className="lufs-stat-val" style={{color:'var(--accent)'}}>−0.8</span></div>
+          <div className="mono">DR&nbsp;&nbsp;&nbsp; <span className="lufs-stat-val">8.1</span></div>
+          <div className="mono">PSR&nbsp;&nbsp;<span className="lufs-stat-val">13.4</span></div>
+        </div>
+      </div>
+
+      <div className="correlation">
+        <div className="corr-label">
+          <span>−1</span><span>CORR</span><span>+1</span>
+        </div>
+        <HBar value={a.corr} min={-1} max={1} width={96} height={6} color={a.corr < 0 ? 'var(--danger)' : a.corr < 0.3 ? 'var(--amber)' : 'var(--accent)'} />
+        <div className="corr-value">{fmt(a.corr,2)}</div>
+      </div>
+
+      <div className="meter-block">
+        <div className="meter-label">
+          <span className="meter-name">OUTPUT</span>
+          <span className="meter-db mono">L {(20 * Math.log10(Math.max(a.outL, 0.001))).toFixed(1)}</span>
+          <span className="meter-db mono">R {(20 * Math.log10(Math.max(a.outR, 0.001))).toFixed(1)}</span>
+        </div>
+        <LevelMeter values={[a.outL, a.outR]} width={6} height={44} segments={20} />
+      </div>
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────── App ──────────────────────────
+function App() {
+  const [st, setSt] = useState(initialState);
+  const [presetIdx, setPresetIdx] = useState(2);
+  const [activeModule, setActiveModule] = useState('eq');
+  const audio = useFakeAudio();
+
+  return (
+    <div className="plugin">
+      <Header st={st} setSt={setSt} presetIdx={presetIdx} setPresetIdx={setPresetIdx} />
+      <ModuleStrip activeModule={activeModule} setActiveModule={setActiveModule} st={st} audio={audio} />
+      <MainCanvas st={st} setSt={setSt} audio={audio} activeModule={activeModule} />
+      <ControlDeck st={st} setSt={setSt} activeModule={activeModule} audio={audio} />
+      <Footer st={st} audio={audio} />
+    </div>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+</script>
+</body>
+</html>

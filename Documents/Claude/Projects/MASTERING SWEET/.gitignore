@@ -1,0 +1,44 @@
+# Build artifacts
+build/
+Build/
+*.o
+*.a
+*.so
+*.dylib
+*.dll
+
+# Xcode
+*.xcodeproj/xcuserdata/
+*.xcodeproj/project.xcworkspace/xcuserdata/
+DerivedData/
+.DS_Store
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# JUCE
+JuceLibraryCode/
+AppConfig.h
+
+# CMake
+CMakeFiles/
+CMakeCache.txt
+cmake_install.cmake
+Makefile
+
+# macOS
+.DS_Store
+*.app/
+*.component/
+*.vst3/
+
+# Plugins (built output)
+/Library/Audio/Plug-Ins/
+
+# Temporary files
+*.tmp
+*.bak
+*~

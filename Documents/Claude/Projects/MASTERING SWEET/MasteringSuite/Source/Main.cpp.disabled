@@ -1,0 +1,56 @@
+#include <JuceHeader.h>
+#include "PluginProcessor.h"
+#include "UI/PluginEditor.h"
+
+class MasteringSuiteWindow : public juce::DocumentWindow
+{
+public:
+    MasteringSuiteWindow()
+        : juce::DocumentWindow("MasteringSuite",
+                               juce::Desktop::getInstance().getDefaultLookAndFeel()
+                                   .findColour(juce::ResizableWindow::backgroundColourId),
+                               juce::DocumentWindow::allButtons)
+    {
+        setUsingNativeTitleBar(true);
+        setContentOwned(new MasteringSuiteEditor(processor), true);
+        setResizable(true, false);
+        centreWithSize(800, 600);
+        setVisible(true);
+    }
+
+    void closeButtonPressed() override
+    {
+        juce::JUCEApplication::getInstance()->systemRequestedQuit();
+    }
+
+private:
+    MasteringSuiteProcessor processor;
+};
+
+class MasteringSuiteApp : public juce::JUCEApplication
+{
+public:
+    const juce::String getApplicationName() override { return "MasteringSuite"; }
+    const juce::String getApplicationVersion() override { return "1.0.0"; }
+    bool moreThanOneInstanceAllowed() override { return true; }
+
+    void initialise(const juce::String&) override
+    {
+        mainWindow.reset(new MasteringSuiteWindow());
+    }
+
+    void shutdown() override
+    {
+        mainWindow = nullptr;
+    }
+
+    void systemRequestedQuit() override
+    {
+        quit();
+    }
+
+private:
+    std::unique_ptr<MasteringSuiteWindow> mainWindow;
+};
+
+START_JUCE_APPLICATION(MasteringSuiteApp)

@@ -1,0 +1,146 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<JUCERPROJECT id="MdLhN9" name="MasteringSuite" projectType="audioplug" useAppConfig="0"
+              addUsingNamespaceToJuceHeader="0" displaySplashScreen="1" jucerFormatVersion="1">
+  <MAINGROUP id="W0JdQo" name="MasteringSuite">
+    <GROUP id="{8B9FE0A9-72DB-E0DB-8BDF-32A70A3A6CD3}" name="Source">
+      <FILE id="DL28pV" name="PluginProcessor.h" compile="0" resource="0"
+            file="Source/PluginProcessor.h"/>
+      <FILE id="K3Mw5q" name="PluginProcessor.cpp" compile="1" resource="0"
+            file="Source/PluginProcessor.cpp"/>
+      <GROUP id="{9E1D8F2A-7C4E-B2A1-9D3C-5E8F1A2B4C6D}" name="Metering">
+        <FILE id="EB1M4v" name="EbuR128Meter.h" compile="0" resource="0" file="Source/Metering/EbuR128Meter.h"/>
+        <FILE id="K9L2pQ" name="EbuR128Meter.cpp" compile="1" resource="0"
+              file="Source/Metering/EbuR128Meter.cpp"/>
+      </GROUP>
+      <GROUP id="{P5Q6R7S8-T9U0-V1W2-X3Y4-Z5A6B7C8D9E0}" name="Processing">
+        <FILE id="EQ001h" name="MasteringEQ.h" compile="0" resource="0" file="Source/Processing/MasteringEQ.h"/>
+        <FILE id="EQ001c" name="MasteringEQ.cpp" compile="1" resource="0"
+              file="Source/Processing/MasteringEQ.cpp"/>
+        <FILE id="LIM001h" name="MasteringLimiter.h" compile="0" resource="0" file="Source/Processing/MasteringLimiter.h"/>
+        <FILE id="LIM001c" name="MasteringLimiter.cpp" compile="1" resource="0"
+              file="Source/Processing/MasteringLimiter.cpp"/>
+        <FILE id="MC001h" name="MasteringCompressor.h" compile="0" resource="0" file="Source/Processing/MasteringCompressor.h"/>
+        <FILE id="MC001c" name="MasteringCompressor.cpp" compile="1" resource="0"
+              file="Source/Processing/MasteringCompressor.cpp"/>
+      </GROUP>
+      <GROUP id="{A1B2C3D4-E5F6-G7H8-I9J0-K1L2M3N4O5P6}" name="UI">
+        <FILE id="THM001" name="Theme.h" compile="0" resource="0" file="Source/UI/Theme.h"/>
+        <FILE id="M7N8oP" name="PluginEditor.h" compile="0" resource="0" file="Source/UI/PluginEditor.h"/>
+        <FILE id="Q9R0sT" name="PluginEditor.cpp" compile="1" resource="0"
+              file="Source/UI/PluginEditor.cpp"/>
+        <FILE id="LAF001h" name="NeonLookAndFeel.h" compile="0" resource="0" file="Source/UI/NeonLookAndFeel.h"/>
+        <FILE id="LAF001c" name="NeonLookAndFeel.cpp" compile="1" resource="0" file="Source/UI/NeonLookAndFeel.cpp"/>
+        <FILE id="MTR001h" name="MeterDisplay.h" compile="0" resource="0" file="Source/UI/MeterDisplay.h"/>
+        <FILE id="MTR001c" name="MeterDisplay.cpp" compile="1" resource="0" file="Source/UI/MeterDisplay.cpp"/>
+        <FILE id="VUM001h" name="VUMeter.h" compile="0" resource="0" file="Source/UI/VUMeter.h"/>
+        <FILE id="VUM001c" name="VUMeter.cpp" compile="1" resource="0" file="Source/UI/VUMeter.cpp"/>
+        <FILE id="FRQ001h" name="FrequencyResponseCurve.h" compile="0" resource="0" file="Source/UI/FrequencyResponseCurve.h"/>
+        <FILE id="FRQ001c" name="FrequencyResponseCurve.cpp" compile="1" resource="0" file="Source/UI/FrequencyResponseCurve.cpp"/>
+        <FILE id="GRM001h" name="GainReductionMeter.h" compile="0" resource="0" file="Source/UI/GainReductionMeter.h"/>
+        <FILE id="GRM001c" name="GainReductionMeter.cpp" compile="1" resource="0" file="Source/UI/GainReductionMeter.cpp"/>
+        <FILE id="RK001h" name="RotaryKnob.h" compile="0" resource="0" file="Source/UI/RotaryKnob.h"/>
+        <FILE id="RK001c" name="RotaryKnob.cpp" compile="1" resource="0" file="Source/UI/RotaryKnob.cpp"/>
+        <FILE id="RKI001h" name="RotaryKnobImage.h" compile="0" resource="0" file="Source/UI/RotaryKnobImage.h"/>
+        <FILE id="RKI001c" name="RotaryKnobImage.cpp" compile="1" resource="0" file="Source/UI/RotaryKnobImage.cpp"/>
+        <FILE id="LUFS001h" name="LUFSDisplay.h" compile="0" resource="0" file="Source/UI/LUFSDisplay.h"/>
+        <FILE id="LUFS001c" name="LUFSDisplay.cpp" compile="1" resource="0" file="Source/UI/LUFSDisplay.cpp"/>
+        <FILE id="LG001h" name="LoudnessGraph.h" compile="0" resource="0" file="Source/UI/LoudnessGraph.h"/>
+        <FILE id="LG001c" name="LoudnessGraph.cpp" compile="1" resource="0" file="Source/UI/LoudnessGraph.cpp"/>
+        <FILE id="PB001h" name="PillButton.h" compile="0" resource="0" file="Source/UI/PillButton.h"/>
+        <FILE id="PB001c" name="PillButton.cpp" compile="1" resource="0" file="Source/UI/PillButton.cpp"/>
+        <FILE id="SGC01h" name="SegmentedControl.h" compile="0" resource="0" file="Source/UI/SegmentedControl.h"/>
+        <FILE id="SGC01c" name="SegmentedControl.cpp" compile="1" resource="0" file="Source/UI/SegmentedControl.cpp"/>
+        <FILE id="SWH01h" name="SweetHeader.h" compile="0" resource="0" file="Source/UI/SweetHeader.h"/>
+        <FILE id="SWH01c" name="SweetHeader.cpp" compile="1" resource="0" file="Source/UI/SweetHeader.cpp"/>
+        <FILE id="MTS01h" name="ModuleTabStrip.h" compile="0" resource="0" file="Source/UI/ModuleTabStrip.h"/>
+        <FILE id="MTS01c" name="ModuleTabStrip.cpp" compile="1" resource="0" file="Source/UI/ModuleTabStrip.cpp"/>
+        <FILE id="MDH01h" name="ModuleHeader.h" compile="0" resource="0" file="Source/UI/ModuleHeader.h"/>
+        <FILE id="MDH01c" name="ModuleHeader.cpp" compile="1" resource="0" file="Source/UI/ModuleHeader.cpp"/>
+        <FILE id="TCC01h" name="TransferCurveComponent.h" compile="0" resource="0" file="Source/UI/TransferCurveComponent.h"/>
+        <FILE id="TCC01c" name="TransferCurveComponent.cpp" compile="1" resource="0" file="Source/UI/TransferCurveComponent.cpp"/>
+        <FILE id="CGR01h" name="CompressorGRMeter.h" compile="0" resource="0" file="Source/UI/CompressorGRMeter.h"/>
+        <FILE id="CGR01c" name="CompressorGRMeter.cpp" compile="1" resource="0" file="Source/UI/CompressorGRMeter.cpp"/>
+        <FILE id="DYM01h" name="DynamicsModule.h" compile="0" resource="0" file="Source/UI/DynamicsModule.h"/>
+        <FILE id="DYM01c" name="DynamicsModule.cpp" compile="1" resource="0" file="Source/UI/DynamicsModule.cpp"/>
+        <FILE id="BTS01h" name="BottomStrip.h" compile="0" resource="0" file="Source/UI/BottomStrip.h"/>
+        <FILE id="BTS01c" name="BottomStrip.cpp" compile="1" resource="0" file="Source/UI/BottomStrip.cpp"/>
+        <FILE id="FTB01h" name="FooterBar.h" compile="0" resource="0" file="Source/UI/FooterBar.h"/>
+        <FILE id="FTB01c" name="FooterBar.cpp" compile="1" resource="0" file="Source/UI/FooterBar.cpp"/>
+        <FILE id="COL001" name="Colors.h" compile="0" resource="0" file="Source/UI/Colors.h"/>
+      </GROUP>
+    </GROUP>
+    <GROUP id="{X9Y0Z1A2-B3C4-D5E6-F7G8-H9I0J1K2L3M4}" name="Tests">
+      <FILE id="VAL001" name="MeterValidation.cpp" compile="0" resource="0"
+            file="tests/MeterValidation.cpp"/>
+    </GROUP>
+  </MAINGROUP>
+  <JUCEOPTIONS JUCE_STRICT_REFCOUNTEDPOINTER="1" JUCE_VST3_CAN_REPLACE_VST2="0"/>
+  <EXPORTFORMATS>
+    <XCODE_MAC targetFolder="Builds/MacOSX" smallIcon="0" bigIcon="0" microphonePermissionNeeded="0"
+               cameraPermissionNeeded="0">
+      <CONFIGURATIONS>
+        <CONFIGURATION isDebug="1" name="Debug" targetName="MasteringSuite"/>
+        <CONFIGURATION isDebug="0" name="Release" targetName="MasteringSuite" optimisation="3"/>
+      </CONFIGURATIONS>
+      <MODULEPATHS>
+        <MODULEPATH id="juce_audio_basics" path="~/JUCE/modules"/>
+        <MODULEPATH id="juce_audio_formats" path="~/JUCE/modules"/>
+        <MODULEPATH id="juce_audio_plugin_client" path="~/JUCE/modules"/>
+        <MODULEPATH id="juce_audio_processors" path="~/JUCE/modules"/>
+        <MODULEPATH id="juce_audio_utils" path="~/JUCE/modules"/>
+        <MODULEPATH id="juce_core" path="~/JUCE/modules"/>
+        <MODULEPATH id="juce_data_structures" path="~/JUCE/modules"/>
+        <MODULEPATH id="juce_dsp" path="~/JUCE/modules"/>
+        <MODULEPATH id="juce_events" path="~/JUCE/modules"/>
+        <MODULEPATH id="juce_graphics" path="~/JUCE/modules"/>
+        <MODULEPATH id="juce_gui_basics" path="~/JUCE/modules"/>
+        <MODULEPATH id="juce_gui_extra" path="~/JUCE/modules"/>
+        <MODULEPATH id="juce_audio_processors_headless" path="../../../../../JUCE/modules"/>
+        <MODULEPATH id="juce_audio_devices" path="../../../../../JUCE/modules"/>
+      </MODULEPATHS>
+      <VSTPATHS/>
+      <VSTS3PATHS/>
+      <AUPATHS/>
+    </XCODE_MAC>
+  </EXPORTFORMATS>
+  <MODULES>
+    <MODULE id="juce_audio_basics" showAllCode="1" useLocalCopy="0" useGlobalPath="1"/>
+    <MODULE id="juce_audio_devices" showAllCode="1" useLocalCopy="0" useGlobalPath="1"/>
+    <MODULE id="juce_audio_formats" showAllCode="1" useLocalCopy="0" useGlobalPath="1"/>
+    <MODULE id="juce_audio_plugin_client" showAllCode="1" useLocalCopy="0" useGlobalPath="1"/>
+    <MODULE id="juce_audio_processors" showAllCode="1" useLocalCopy="0" useGlobalPath="1"/>
+    <MODULE id="juce_audio_processors_headless" showAllCode="1" useLocalCopy="0"
+            useGlobalPath="1"/>
+    <MODULE id="juce_audio_utils" showAllCode="1" useLocalCopy="0" useGlobalPath="1"/>
+    <MODULE id="juce_core" showAllCode="1" useLocalCopy="0" useGlobalPath="1"/>
+    <MODULE id="juce_data_structures" showAllCode="1" useLocalCopy="0" useGlobalPath="1"/>
+    <MODULE id="juce_dsp" showAllCode="1" useLocalCopy="0" useGlobalPath="1"/>
+    <MODULE id="juce_events" showAllCode="1" useLocalCopy="0" useGlobalPath="1"/>
+    <MODULE id="juce_graphics" showAllCode="1" useLocalCopy="0" useGlobalPath="1"/>
+    <MODULE id="juce_gui_basics" showAllCode="1" useLocalCopy="0" useGlobalPath="1"/>
+    <MODULE id="juce_gui_extra" showAllCode="1" useLocalCopy="0" useGlobalPath="1"/>
+  </MODULES>
+  <APPCONFIG name="MasteringSuite"
+             companyName="MasteringSuite"
+             companyWebsite="https://github.com/kalimeeks/MasteringSuite"
+             companyEmail="kalithegreatkali@gmail.com"
+             displaySplashScreen="0"
+             pluginFormats="VST3,AU"
+             pluginCode="SWET"
+             pluginChannelConfigs="{1, 1}, {2, 2}"
+             pluginDesc="Professional mastering suite with EQ, dynamics, saturation, stereo imaging, and true-peak limiting"
+             pluginManufacturer="MasteringSuite"
+             pluginManufacturerCode="MSTE"
+             bundleIdentifier="com.masteringsuite.audio.mastering"
+             pluginVersion="1.0.0"
+             pluginAAXCategory="24"
+             pluginVSTCategory="Dynamics"
+             pluginAUMainType="kAudioUnitType_Effect"
+             pluginIsMidiEffectPlugin="0"
+             pluginProducesMidiOutput="0"
+             pluginWantsMidiInput="0"
+             pluginNeedsDefaultMidiInput="0"
+             pluginEditorRequiresKeys="0"
+             pluginRTASCategory="Dynamics"/>
+</JUCERPROJECT>
