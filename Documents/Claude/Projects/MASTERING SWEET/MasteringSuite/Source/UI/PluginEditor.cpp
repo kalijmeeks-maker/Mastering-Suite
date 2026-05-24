@@ -77,66 +77,70 @@ void MasteringSuiteEditor::paint(juce::Graphics& g)
 
     auto bounds = getLocalBounds().toFloat();
 
-    // Header
+    // Header bar with logo
     g.setColour(Theme::Color::toColour(Theme::Color::BG_1));
-    auto headerBounds = bounds.removeFromTop(44);
+    auto headerBounds = bounds.removeFromTop(50);
     g.fillRect(headerBounds);
-    g.setColour(Theme::Color::toColour(Theme::Color::TEXT_BRIGHT));
-    g.setFont(Theme::Font::make(18.0f, Theme::Font::WEIGHT_BOLD));
-    g.drawText("SWEET MASTERING", headerBounds.reduced(14, 0), juce::Justification::centredLeft);
 
-    // Module title
+    // SWEET logo
+    g.setColour(Theme::Color::toColour(Theme::Color::ACCENT));
+    g.setFont(Theme::Font::make(24.0f, Theme::Font::WEIGHT_BOLD));
+    g.drawText("SWEET", headerBounds.withLeft(14), juce::Justification::centredLeft);
+
+    // Module title and controls indicator
     g.setColour(Theme::Color::toColour(Theme::Color::TEXT_BRIGHT));
-    g.setFont(Theme::Font::make(13.0f, Theme::Font::WEIGHT_BOLD));
-    auto titleBounds = bounds.removeFromTop(44);
-    g.drawText("EQUALIZER", titleBounds.reduced(14, 0), juce::Justification::centredLeft);
+    g.setFont(Theme::Font::make(12.0f, Theme::Font::WEIGHT_BOLD));
+    g.drawText("6-BAND EQUALIZER", headerBounds.withLeft(100), juce::Justification::centredLeft);
+
+    // Top divider line
+    g.setColour(Theme::Color::toColour(Theme::Color::LINE));
+    g.drawHorizontalLine((int)headerBounds.getBottom() - 1, 0, getWidth());
 }
 
 void MasteringSuiteEditor::resized()
 {
     auto bounds = getLocalBounds();
-    bounds.removeFromTop(44); // Header
-    bounds.removeFromTop(44); // Title
+    bounds.removeFromTop(50); // Header
 
-    // Frequency response curve (top 60% of remaining space)
-    auto curveBounds = bounds.removeFromTop(bounds.getHeight() * 0.60f);
-    freqCurve->setBounds(curveBounds.reduced(14));
+    // Frequency response curve (45% of remaining space)
+    auto curveBounds = bounds.removeFromTop((int)(bounds.getHeight() * 0.45f));
+    freqCurve->setBounds(curveBounds.reduced(12, 10));
 
-    // Control deck (bottom 40%)
-    auto controlBounds = bounds.reduced(14);
+    // Control grid (50% of remaining space)
+    auto controlBounds = bounds.removeFromTop((int)(getHeight() * 0.45f)).reduced(12, 10);
     int bandWidth = controlBounds.getWidth() / 6;
-    int knobSize = Theme::Layout::KNOB_SIZE_SMALL;
-    int spacing = 8;
+    int knobSize = 48;
+    int labelHeight = 16;
+    int spacing = 6;
 
     for (int i = 0; i < 6; ++i) {
-        auto bandBounds = controlBounds.withLeft(controlBounds.getX() + i * bandWidth)
-                                       .withRight(controlBounds.getX() + (i + 1) * bandWidth);
+        auto bandX = controlBounds.getX() + i * bandWidth;
+        auto bandBounds = juce::Rectangle<int>(bandX, controlBounds.getY(), bandWidth, controlBounds.getHeight());
         bandBounds = bandBounds.reduced(spacing);
 
         int y = bandBounds.getY();
-        bandTypeBoxes[i]->setBounds(bandBounds.withHeight(22).translated(0, y));
-        y += 30;
 
-        bandFreqKnobs[i]->setBounds(bandBounds.withLeft(bandBounds.getCentreX() - knobSize/2)
-                                               .withTop(y)
-                                               .withWidth(knobSize)
-                                               .withHeight(knobSize));
+        // Type selector at top
+        bandTypeBoxes[i]->setBounds(bandBounds.withHeight(labelHeight).withY(y));
+        y += labelHeight + spacing;
+
+        // Frequency knob
+        auto knobX = bandBounds.getCentreX() - knobSize / 2;
+        bandFreqKnobs[i]->setBounds(knobX, y, knobSize, knobSize);
         y += knobSize + spacing;
 
-        bandGainKnobs[i]->setBounds(bandBounds.withLeft(bandBounds.getCentreX() - knobSize/2)
-                                               .withTop(y)
-                                               .withWidth(knobSize)
-                                               .withHeight(knobSize));
+        // Gain knob
+        bandGainKnobs[i]->setBounds(knobX, y, knobSize, knobSize);
         y += knobSize + spacing;
 
-        bandQKnobs[i]->setBounds(bandBounds.withLeft(bandBounds.getCentreX() - knobSize/2)
-                                            .withTop(y)
-                                            .withWidth(knobSize)
-                                            .withHeight(knobSize));
+        // Q knob
+        bandQKnobs[i]->setBounds(knobX, y, knobSize, knobSize);
     }
 
-    lufsLabel.setBounds(getLocalBounds().getWidth() - 180, 10, 160, 24);
-    grLabel.setBounds(getLocalBounds().getWidth() - 180, 40, 160, 20);
+    // Bottom status bar (5% of remaining space)
+    auto statusBounds = bounds.removeFromBottom((int)(getHeight() * 0.08f));
+    lufsLabel.setBounds(statusBounds.withLeft(12).withWidth(150).reduced(0, 2));
+    grLabel.setBounds(statusBounds.withRight(getWidth() - 12).withLeft(getWidth() - 162).reduced(0, 2));
 }
 
 void MasteringSuiteEditor::timerCallback()
