@@ -4,10 +4,10 @@
 
 class MasteringSuiteProcessor;
 
-class FooterBar : public juce::Component {
+class LufsPanel : public juce::Component {
 public:
-    explicit FooterBar(MasteringSuiteProcessor& proc);
-    ~FooterBar() override = default;
+    explicit LufsPanel(MasteringSuiteProcessor& proc);
+    ~LufsPanel() override = default;
 
     void paint(juce::Graphics& g) override;
     void resized() override;
@@ -16,5 +16,5 @@ public:
 private:
     MasteringSuiteProcessor& processor;
 
-    JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(FooterBar)
+    JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(LufsPanel)
 };

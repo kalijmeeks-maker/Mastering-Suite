@@ -1,5 +1,5 @@
 #pragma once
-#include <juce_gui_basics/juce_gui_basics.h>
+#include <JuceHeader.h>
 #include "Theme.h"
 
 class NeonLookAndFeel : public juce::LookAndFeel_V4 {
@@ -25,10 +25,5 @@ public:
 
     void drawLabel(juce::Graphics& g, juce::Label& label) override;
 
-    // Helper: Get accent color for a component (can be overridden per-slider)
-    juce::Colour getAccentColourForSlider(const juce::Slider& slider);
-
 private:
-    // Default accent color (neon green)
-    juce::Colour defaultAccent = juce::Colour(Theme::Color::ACCENT);
 };

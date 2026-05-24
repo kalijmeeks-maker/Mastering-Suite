@@ -4,17 +4,16 @@
 
 class MasteringSuiteProcessor;
 
-class FooterBar : public juce::Component {
+class HeaderBar : public juce::Component {
 public:
-    explicit FooterBar(MasteringSuiteProcessor& proc);
-    ~FooterBar() override = default;
+    explicit HeaderBar(MasteringSuiteProcessor& proc);
+    ~HeaderBar() override = default;
 
     void paint(juce::Graphics& g) override;
     void resized() override;
-    void refresh();
 
 private:
     MasteringSuiteProcessor& processor;
 
-    JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(FooterBar)
+    JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(HeaderBar)
 };
