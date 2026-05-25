@@ -34,6 +34,7 @@ public:
 
     // Professional parameter management via APVTS
     juce::AudioProcessorValueTreeState& getAPVTS() { return apvts; }
+    juce::UndoManager& getUndoManager() { return undoManager; }
 
     EbuR128Meter& getMeter() { return meter; }
     MasteringEQ& getEQ() { return eq; }

@@ -1,5 +1,6 @@
 #include "EqCurveDisplay.h"
 #include "../PluginProcessor.h"
+#include "EqBandCell.h"
 
 EqCurveDisplay::EqCurveDisplay(MasteringSuiteProcessor& proc) : processor(proc) {
     auto& apvts = processor.getAPVTS();
@@ -133,7 +134,9 @@ void EqCurveDisplay::paint(juce::Graphics& g) {
     // Handles
     for (auto& h : handles) {
         bool isBypassed = *processor.getAPVTS().getRawParameterValue("eq" + juce::String(h.index) + "Type") == 0;
-        
+        bool isHovered  = (h.index == hoveredHandleIndex);
+        bool isDragging = (h.index == draggingHandleIndex);
+
         if (!isBypassed) {
             // Neon Glow
             g.setColour(h.color.withAlpha(0.2f));
@@ -144,14 +147,17 @@ void EqCurveDisplay::paint(juce::Graphics& g) {
 
         g.setColour(isBypassed ? juce::Colour(mst::theme::textLow) : h.color);
         g.fillEllipse(h.pos.x - 8, h.pos.y - 8, 16, 16);
-        
+
         g.setColour(juce::Colour(mst::theme::bgBase));
         g.setFont(juce::Font(10.0f).boldened());
         g.drawText(juce::String(h.index + 1), h.pos.x - 8, h.pos.y - 8, 16, 16, juce::Justification::centred);
-        
-        if (h.index == draggingHandleIndex) {
-            g.setColour(h.color.withAlpha(0.4f));
-            g.drawEllipse(h.pos.x - 12, h.pos.y - 12, 24, 24, 2.0f);
+
+        // v1.0.1-H3: hover state mirrors the knobs — brighten the outer ring.
+        if (isDragging || isHovered) {
+            float alpha = isDragging ? 0.9f : 0.7f;
+            float stroke = isDragging ? 2.0f : 1.5f;
+            g.setColour(h.color.withAlpha(alpha));
+            g.drawEllipse(h.pos.x - 12, h.pos.y - 12, 24, 24, stroke);
         }
     }
 }
@@ -257,12 +263,48 @@ void EqCurveDisplay::mouseDrag(const juce::MouseEvent& e) {
     if (draggingHandleIndex != -1) {
         float freq = juce::jlimit(20.0f, 20000.0f, xToFreq(e.position.x));
         float gain = juce::jlimit(-12.0f, 12.0f, yToGain(e.position.y));
-        
+
         processor.getAPVTS().getParameter("eq" + juce::String(draggingHandleIndex) + "Freq")->setValueNotifyingHost(
             processor.getAPVTS().getParameterRange("eq" + juce::String(draggingHandleIndex) + "Freq").convertTo0to1(freq));
-        
+
         processor.getAPVTS().getParameter("eq" + juce::String(draggingHandleIndex) + "Gain")->setValueNotifyingHost(
             processor.getAPVTS().getParameterRange("eq" + juce::String(draggingHandleIndex) + "Gain").convertTo0to1(gain));
+
+        // v1.0.1-H1: APVTS listener -> callAsync repaint can lag visibly during
+        // a fast drag. Force adjacent band cells to repaint NOW.
+        repaintSiblingCells();
+    }
+}
+
+void EqCurveDisplay::repaintSiblingCells() {
+    if (auto* parent = getParentComponent()) {
+        for (auto* child : parent->getChildren()) {
+            if (auto* cell = dynamic_cast<EqBandCell*>(child)) cell->repaint();
+        }
+    }
+}
+
+void EqCurveDisplay::mouseMove(const juce::MouseEvent& e) {
+    int newHover = -1;
+    for (int i = 0; i < 6; ++i) {
+        if (handles[i].pos.getDistanceSquaredFrom(e.position) < 400.0f) {  // 20px radius
+            newHover = i;
+            break;
+        }
+    }
+    if (newHover != hoveredHandleIndex) {
+        hoveredHandleIndex = newHover;
+        setMouseCursor(hoveredHandleIndex >= 0 ? juce::MouseCursor::PointingHandCursor
+                                               : juce::MouseCursor::NormalCursor);
+        repaint();
+    }
+}
+
+void EqCurveDisplay::mouseExit(const juce::MouseEvent&) {
+    if (hoveredHandleIndex != -1) {
+        hoveredHandleIndex = -1;
+        setMouseCursor(juce::MouseCursor::NormalCursor);
+        repaint();
     }
 }
 

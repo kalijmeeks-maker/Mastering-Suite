@@ -26,6 +26,8 @@ public:
     void mouseDrag(const juce::MouseEvent& e) override;
     void mouseUp(const juce::MouseEvent& e) override;
     void mouseDoubleClick(const juce::MouseEvent& e) override;
+    void mouseMove(const juce::MouseEvent& e) override;
+    void mouseExit(const juce::MouseEvent& e) override;
     void mouseWheelMove(const juce::MouseEvent& e, const juce::MouseWheelDetails& wheel) override;
 
 private:
@@ -42,6 +44,12 @@ private:
     // after a 200ms hold so dots read as "ghost peaks" above the live bars.
     std::vector<float>  peakHoldDb;
     std::vector<double> peakHoldTimeMs;
+
+    int hoveredHandleIndex = -1;   // v1.0.1-H3: matches knob hover behavior
+
+    // v1.0.1-H1: called from mouseDrag so adjacent EqBandCells repaint
+    // synchronously instead of waiting for the next async parameter callback.
+    void repaintSiblingCells();
     
     void updatePath();
     float freqToX(float freq);

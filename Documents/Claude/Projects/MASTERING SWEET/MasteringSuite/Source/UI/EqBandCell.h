@@ -132,9 +132,18 @@ public:
     }
 
     void parameterChanged(const juce::String&, float) override {
-        juce::MessageManager::callAsync([safe = juce::Component::SafePointer<EqBandCell>(this)] {
-            if (safe != nullptr) safe->repaint();
-        });
+        // v1.0.1-H1: callAsync was queueing repaints up to a message-loop tick
+        // behind a fast drag. When we're already on the message thread (UI drag
+        // path) just repaint synchronously; only fall back to async if a
+        // background thread (DAW automation thread) fired the listener.
+        if (auto* mm = juce::MessageManager::getInstanceWithoutCreating();
+            mm != nullptr && mm->isThisTheMessageThread()) {
+            repaint();
+        } else {
+            juce::MessageManager::callAsync([safe = juce::Component::SafePointer<EqBandCell>(this)] {
+                if (safe != nullptr) safe->repaint();
+            });
+        }
     }
 
 private:

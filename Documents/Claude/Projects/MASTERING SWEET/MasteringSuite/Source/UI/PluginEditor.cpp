@@ -86,6 +86,20 @@ void PluginEditor::KnobValueBubble::paint(juce::Graphics& g) {
 }
 
 bool PluginEditor::keyPressed(const juce::KeyPress& k, juce::Component*) {
+    // v1.0.1-H2: Cmd-Z / Cmd-Shift-Z undo+redo. APVTS already has an UndoManager
+    // wired in the processor ctor; SliderAttachment + ButtonAttachment begin/end
+    // gestures automatically so knob drags and pill toggles are undoable units.
+    if (k.getModifiers().isCommandDown()) {
+        if (k.getKeyCode() == 'Z' || k.getKeyCode() == 'z') {
+            auto& um = processor.getUndoManager();
+            if (k.getModifiers().isShiftDown()) {
+                if (um.redo()) processor.postStatusMessage("Redo");
+            } else {
+                if (um.undo()) processor.postStatusMessage("Undo");
+            }
+            return true;
+        }
+    }
     auto ch = k.getTextCharacter();
     if (ch >= '1' && ch <= '4') {
         tabBar->setSelectedIndex(ch - '1');
