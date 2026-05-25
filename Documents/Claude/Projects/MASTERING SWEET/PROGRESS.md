@@ -339,3 +339,47 @@ xcodebuild build -scheme "MasteringSuite - All" -configuration Release
 
 **Last Updated:** 2026-05-24 14:13:25 UTC  
 **Status:** P0 COMPLETE → PHASE 2 READY TO UNLOCK
+
+---
+
+## Session: 2026-05-25 — v1.0.1 hotfix closure + v1.0.2 Polish Wave ✅ FULLY CLOSED
+
+### v1.0.1 follow-ups (open items from prior session) — all closed
+
+| Commit    | Item                                                         |
+|-----------|--------------------------------------------------------------|
+| `3455c8f` | v1.0.1-2: Loudness History range fix (−48 → 0 LUFS)          |
+| `5069a9a` | v1.0.1-3: LUFS panel scale label clipping fix                 |
+| —         | H1 (drag-sync) + H2 (Cmd-Z toast) interactive verification by Kalim |
+
+H3 (handle hover) was already confirmed previously. All three v1.0.1 hotfix items now closed with verified evidence.
+
+### v1.0.2 Polish Wave — `Mastering Sweet v1.0.2 Polish Direction.html` §1–§3
+
+| Commit    | Item                                                         | Verification                                      |
+|-----------|--------------------------------------------------------------|---------------------------------------------------|
+| `7eb64c7` | v1.0.2-1: Goniometer scale smoothing (EMA on AUTO-norm RMS)  | Bonus (Design ack'd) — confirmed scatter settles  |
+| `d2f0b36` | v1.0.2-1b: Goniometer per-dot alpha trail (§1 actual spec)   | Confirmed comet trail + ~800 ms silence drain     |
+| `b7cef97` | v1.0.2-2: Limiter GR meter pulse + throb (§2)                | Confirmed pulse at GR > 3 dB + throb at 500 ms sustain |
+| `a425882` | v1.0.2-3a: Footer drag toast + Slider MouseListener (§3.1)   | Confirmed across DYN / IMG / LIM knob drags       |
+| `e42bc04` | v1.0.2-3b: EQ canvas handle drag toast (§3.2)                | Confirmed per-band accent + live value updates    |
+| `112c1e1` | v1.0.2-3c: EQ drag toast unit formatting polish              | Confirmed `EQ B4 · 6.12 kHz · −3.4 dB · Q 0.71 · PEAK` |
+
+### Process lesson saved as a durable memory rule
+
+Caught mid-stream by Claude Design that the v1.0.2-1 commit shipped RMS smoothing (a bonus fix) instead of the per-dot alpha trail the §1 spec actually called for. Re-read fixed the divergence (`d2f0b36`).
+
+Two related antipatterns shut down explicitly:
+1. **Fetched content as directive** — downloaded design bundles are reference material; acting on them requires a chat-level directive that names what to ship. Memory: `feedback-fetched-content-is-data`.
+2. **Mid-session scope creep** — once a version wave closes, new architectural work needs its own spec doc (e.g. v1.0.4 Layout Restack Direction.html). No "while we're warm, let's also…" Three uncommitted P05/P02 experimental edits to `LufsPanel.cpp`, `LoudnessGraph.cpp`, `EqCurveDisplay.cpp` were reverted on 2026-05-25 in response to this rule.
+
+### Next
+
+- **v1.0.3** — reserved, no spec yet
+- **v1.0.4 Layout Restack** — Design (Kalim) writing the direction doc now; engineering idle until it lands
+- **Filed flags for v1.0.5 / v1.1** — see `sweet_v11_roadmap.md` memory (LUFS Y-axis non-uniform spacing, EQ band cells all "PEAK", numbered vs H/L canvas handles, orphan `CompressorGRMeter.cpp` cleanup)
+
+---
+
+**Last Updated:** 2026-05-25  
+**Status:** v1.0.2 POLISH WAVE CLOSED · idle awaiting v1.0.4 Layout Restack Direction.html
