@@ -71,6 +71,17 @@ PluginEditor::PluginEditor(MasteringSuiteProcessor& proc)
     // handle their own events first; we only observe.
     addMouseListener(this, true);
 
+    // EQ canvas band handles aren't Sliders — wire their drag/release through
+    // the same FooterBar pipeline.
+    if (auto* canvas = eqPanel->getCurveDisplay()) {
+        canvas->onHandleDragStatus = [this](juce::String text, juce::Colour accent) {
+            if (footer) footer->setToast(std::move(text), accent);
+        };
+        canvas->onHandleDragEnd = [this]() {
+            if (footer) footer->clearToast();
+        };
+    }
+
     startTimerHz(30);
 }
 

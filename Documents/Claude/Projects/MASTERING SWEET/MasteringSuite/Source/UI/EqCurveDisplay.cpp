@@ -250,6 +250,31 @@ float EqCurveDisplay::yToGain(float y) {
     return normalizedY * 24.0f - 12.0f;
 }
 
+// v1.0.2 §3 helpers — build the footer toast string from a band's live APVTS
+// state. Format: "EQ B<n+1> · <freq> · <gain> · Q <q> · <type>". Edge handles
+// (HPF/LPF, indices 0 and 5) carry a single Freq value and no Gain/Q row.
+static juce::String formatEqHandleToast(juce::AudioProcessorValueTreeState& apvts, int i) {
+    const auto id = juce::String("eq") + juce::String(i);
+    auto getNorm = [&](const juce::String& sfx) -> juce::String {
+        if (auto* p = apvts.getParameter(id + sfx))
+            return p->getCurrentValueAsText();
+        return {};
+    };
+
+    juce::String label = juce::String("EQ B") + juce::String(i + 1);
+    juce::String freq = getNorm("Freq");
+    juce::String gain = getNorm("Gain");
+    juce::String q    = getNorm("Q");
+    juce::String type = getNorm("Type");
+
+    juce::String out = label;
+    if (freq.isNotEmpty()) out += " · " + freq;
+    if (gain.isNotEmpty()) out += " · " + gain;
+    if (q.isNotEmpty())    out += " · Q " + q;
+    if (type.isNotEmpty()) out += " · " + type.toUpperCase();
+    return out;
+}
+
 void EqCurveDisplay::mouseDown(const juce::MouseEvent& e) {
     draggingHandleIndex = -1;
     for (int i = 0; i < 6; ++i) {
@@ -258,6 +283,10 @@ void EqCurveDisplay::mouseDown(const juce::MouseEvent& e) {
             handles[i].isDragging = true;
             break;
         }
+    }
+    if (draggingHandleIndex != -1 && onHandleDragStatus) {
+        onHandleDragStatus(formatEqHandleToast(processor.getAPVTS(), draggingHandleIndex),
+                           handles[draggingHandleIndex].color);
     }
     repaint();
 }
@@ -276,6 +305,11 @@ void EqCurveDisplay::mouseDrag(const juce::MouseEvent& e) {
         // v1.0.1-H1: APVTS listener -> callAsync repaint can lag visibly during
         // a fast drag. Force adjacent band cells to repaint NOW.
         repaintSiblingCells();
+
+        if (onHandleDragStatus) {
+            onHandleDragStatus(formatEqHandleToast(processor.getAPVTS(), draggingHandleIndex),
+                               handles[draggingHandleIndex].color);
+        }
     }
 }
 
@@ -315,6 +349,7 @@ void EqCurveDisplay::mouseUp(const juce::MouseEvent&) {
     if (draggingHandleIndex != -1) {
         handles[draggingHandleIndex].isDragging = false;
         draggingHandleIndex = -1;
+        if (onHandleDragEnd) onHandleDragEnd();
     }
     repaint();
 }
