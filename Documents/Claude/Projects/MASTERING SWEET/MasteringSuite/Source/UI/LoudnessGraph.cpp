@@ -1,6 +1,15 @@
 #include "LoudnessGraph.h"
 #include "../PluginProcessor.h"
 
+// Visible LUFS range for bar heights, Y-axis labels, and the target reference
+// line. Read by three sites in paint() — keep them in sync via these constants.
+// -48 dB picks up real noise-floor / pre-amp material without slamming the
+// floor clamp; the streaming -14 target lands at ~70.8% bar height.
+static constexpr float kBottomDb = -48.0f;
+static constexpr float kTopDb    = 0.0f;
+static constexpr float kRangeDb  = kTopDb - kBottomDb;
+static constexpr float kTargetLufs = -14.0f;
+
 LoudnessGraph::LoudnessGraph(MasteringSuiteProcessor& proc) : processor(proc) {}
 
 void LoudnessGraph::paint(juce::Graphics& g) {
@@ -42,8 +51,8 @@ void LoudnessGraph::paint(juce::Graphics& g) {
     const float barWidth = graphArea.getWidth() / (float)maxSamples;
 
     for (size_t i = 0; i < history.size(); ++i) {
-        float normalized = (history[i] + 36.0f) / 36.0f; // -36 to 0 LUFS
-        normalized = juce::jlimit(0.06f, 1.0f, normalized); // 6% min-height clamp
+        float normalized = (history[i] - kBottomDb) / kRangeDb;
+        normalized = juce::jlimit(0.03f, 1.0f, normalized); // 3% min-height clamp
 
         auto barX = graphArea.getX() + (i * barWidth);
         juce::ColourGradient barGrad(
@@ -56,8 +65,9 @@ void LoudnessGraph::paint(juce::Graphics& g) {
         g.fillRect(barX, graphArea.getBottom() - barHeight, barWidth - 0.5f, barHeight);
     }
 
-    // Reference line at -14 LUFS (mint green, dashed)
-    const float refY = graphArea.getBottom() - (graphArea.getHeight() * ((-14.0f + 36.0f) / 36.0f));
+    // Reference line at streaming target (mint green, dashed). v1.1 #3 makes
+    // kTargetLufs configurable; the only change there is the constant value.
+    const float refY = graphArea.getBottom() - (graphArea.getHeight() * ((kTargetLufs - kBottomDb) / kRangeDb));
     g.setColour(juce::Colour(mst::theme::tabLim).withAlpha(0.4f));
     for (float x = graphArea.getX(); x < graphArea.getRight(); x += 4.0f) {
         g.drawLine(x, refY, x + 2.0f, refY, 1.0f);
@@ -66,8 +76,8 @@ void LoudnessGraph::paint(juce::Graphics& g) {
     // Y-axis labels in a proper column down the left side
     g.setFont(juce::Font(8.0f));
     g.setColour(juce::Colour(mst::theme::textLow));
-    for (int lufs : {-6, -10, -14, -18, -22, -26}) {
-        float yNorm = (lufs + 36.0f) / 36.0f;
+    for (int lufs : {0, -8, -16, -24, -32, -40}) {
+        float yNorm = ((float)lufs - kBottomDb) / kRangeDb;
         float y = graphArea.getBottom() - (graphArea.getHeight() * yNorm);
         g.drawText(juce::String(lufs), 5, (int)(y - 5), 25, 10, juce::Justification::centredRight);
     }
