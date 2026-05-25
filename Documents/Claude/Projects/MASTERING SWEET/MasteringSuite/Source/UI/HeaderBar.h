@@ -17,6 +17,10 @@ public:
     void refresh();
 
 private:
+    // v1.1-1: + NEW... opens this; pops a juce::AlertWindow with a single text input.
+    void showSavePresetDialog();
+    juce::String currentDisplayName() const;  // factory name OR user preset name
+
     MasteringSuiteProcessor& processor;
 
     SegmentedControl abToggle;

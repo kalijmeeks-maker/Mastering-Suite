@@ -24,28 +24,58 @@ HeaderBar::HeaderBar(MasteringSuiteProcessor& proc) : processor(proc) {
     addAndMakeVisible(copyABButton);
 
     // Preset Button — neutral pill, opens a PopupMenu on click.
-    // Label is refreshed by refresh() so the "•" modified indicator can appear.
-    presetButton.setButtonText("PRESET: " + MasteringSuiteProcessor::getPresetNames()[processor.getCurrentPreset()]);
+    // Menu layout (v1.1-1):
+    //   FACTORY: DEFAULT / BRIGHT / WARM / PUNCHY / WIDE     (checked = active)
+    //   ─────
+    //   USER: <alphabetical>                                  (checked = active)
+    //   ─────
+    //   + NEW…                                                (always enabled)
+    //   Save changes to <current>                             (enabled iff user preset loaded)
+    //   Reset to preset                                       (enabled iff snapshot exists)
+    presetButton.setButtonText("PRESET: " + currentDisplayName());
     addAndMakeVisible(presetButton);
     presetButton.onClick = [this] {
         juce::PopupMenu menu;
-        auto names = MasteringSuiteProcessor::getPresetNames();
-        int active = processor.getCurrentPreset();
-        // "Save changes to <preset>" item appears at the top only when modified.
-        // (Save is a no-op stub for now — design first, ship later per the punch list.)
-        if (processor.isPresetModified()) {
-            menu.addItem(999, "Save changes to " + names[active]);
+        auto factoryNames = MasteringSuiteProcessor::getPresetNames();
+        int activeFactory = processor.getCurrentPreset();
+        juce::String activeUser = processor.getCurrentUserPresetName();
+        auto userNames = processor.listUserPresets();
+
+        for (int i = 0; i < factoryNames.size(); ++i) {
+            menu.addItem(i + 1, factoryNames[i], true,
+                         (activeUser.isEmpty() && i == activeFactory));
+        }
+
+        if (! userNames.isEmpty()) {
             menu.addSeparator();
+            for (int i = 0; i < userNames.size(); ++i) {
+                menu.addItem(100 + i, userNames[i], true, userNames[i] == activeUser);
+            }
         }
-        for (int i = 0; i < names.size(); ++i) {
-            menu.addItem(i + 1, names[i], true, i == active);
-        }
+
+        menu.addSeparator();
+        menu.addItem(900, "+ NEW...");
+        const bool canSave = activeUser.isNotEmpty();
+        juce::String saveLabel = canSave ? juce::String("Save changes to ") + activeUser
+                                         : juce::String("Save changes (read-only factory preset)");
+        menu.addItem(901, saveLabel, canSave);
+        menu.addItem(902, "Reset to preset", processor.isPresetModified());
+
         menu.showMenuAsync(juce::PopupMenu::Options().withTargetComponent(&presetButton),
-            [this, names](int result) {
-                if (result == 0 || result == 999) return;
-                int idx = result - 1;
-                processor.loadPreset(idx);
-                presetButton.setButtonText("PRESET: " + names[idx]);
+            [this, factoryNames, userNames](int result) {
+                if (result == 0) return;
+                if (result >= 1 && result <= factoryNames.size()) {
+                    processor.loadPreset(result - 1);
+                } else if (result >= 100 && result < 100 + userNames.size()) {
+                    processor.loadUserPreset(userNames[result - 100]);
+                } else if (result == 900) {
+                    showSavePresetDialog();
+                } else if (result == 901) {
+                    processor.saveChangesToCurrentPreset();
+                } else if (result == 902) {
+                    processor.resetToCurrentSnapshot();
+                }
+                presetButton.setButtonText("PRESET: " + currentDisplayName());
                 presetButton.setToggleState(false, juce::dontSendNotification);
             });
     };
@@ -88,13 +118,52 @@ HeaderBar::HeaderBar(MasteringSuiteProcessor& proc) : processor(proc) {
 void HeaderBar::refresh() {
     // Append a dim cyan "•" when the current preset's parameter snapshot doesn't
     // match the live state. Reads as "dirty buffer" (asterisks read as "broken").
-    auto names = MasteringSuiteProcessor::getPresetNames();
-    juce::String base = "PRESET: " + names[processor.getCurrentPreset()];
+    juce::String base = "PRESET: " + currentDisplayName();
     juce::String desired = processor.isPresetModified() ? (base + juce::String::fromUTF8(" •")) : base;
     if (presetButton.getButtonText() != desired) {
         presetButton.setButtonText(desired);
         presetButton.repaint();
     }
+}
+
+juce::String HeaderBar::currentDisplayName() const {
+    juce::String userName = processor.getCurrentUserPresetName();
+    if (userName.isNotEmpty()) return userName;
+    int idx = processor.getCurrentPreset();
+    auto factory = MasteringSuiteProcessor::getPresetNames();
+    return (idx >= 0 && idx < factory.size()) ? factory[idx] : juce::String("—");
+}
+
+void HeaderBar::showSavePresetDialog() {
+    // AlertWindow with a single text editor — pre-fill with the current user
+    // preset's name if one is loaded so engineers can quickly clone it.
+    auto* alert = new juce::AlertWindow("Save Preset",
+                                        "Name this preset:",
+                                        juce::AlertWindow::NoIcon);
+    juce::String prefill = processor.getCurrentUserPresetName();
+    alert->addTextEditor("name", prefill, juce::String());
+    alert->addButton("Save",   1, juce::KeyPress(juce::KeyPress::returnKey));
+    alert->addButton("Cancel", 0, juce::KeyPress(juce::KeyPress::escapeKey));
+
+    // Auto-focus the text editor so the user can start typing immediately
+    // (and so automated tests / accessibility keystrokes actually land).
+    if (auto* te = alert->getTextEditor("name")) {
+        juce::MessageManager::callAsync([te] {
+            te->grabKeyboardFocus();
+            te->selectAll();
+        });
+    }
+
+    alert->enterModalState(true,
+        juce::ModalCallbackFunction::create([this, alert](int result) {
+            if (result == 1) {
+                auto name = alert->getTextEditorContents("name");
+                if (name.trim().isNotEmpty())
+                    processor.savePresetAs(name);
+            }
+            // alert auto-deletes due to deleteWhenDismissed=true below
+        }),
+        true);
 }
 
 // Builds a 56×56 retina image of the v2 brand mark: 4-stop radial gradient

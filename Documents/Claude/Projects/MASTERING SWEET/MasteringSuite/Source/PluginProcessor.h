@@ -51,6 +51,18 @@ public:
     // True iff any parameter differs from the snapshot recorded by the last loadPreset().
     bool isPresetModified() const;
 
+    // v1.1-1: User preset persistence. XML files at
+    //   ~/Library/Audio/Presets/Mastering Sweet/<name>.xml
+    // Factory presets are read-only and identified by getCurrentPreset() >= 0.
+    // User presets are identified by getCurrentUserPresetName().isNotEmpty().
+    static juce::File getUserPresetDir();
+    juce::StringArray listUserPresets();          // alphabetical, skips corrupt files
+    bool savePresetAs(const juce::String& name);  // overwrite-ok, becomes the active preset
+    bool saveChangesToCurrentPreset();            // no-op for factory; overwrite for user
+    bool loadUserPreset(const juce::String& name);
+    void resetToCurrentSnapshot();                // revert mods without changing which preset is loaded
+    juce::String getCurrentUserPresetName() const { return currentUserPresetName; }
+
     // A/B parameter state banks (Design D10). switchToBank saves the live state
     // into the current bank, then applies the target bank's snapshot. copyABank
     // copies the active bank into the other one (the ↔ affordance).
@@ -118,10 +130,13 @@ private:
     // Professional state management
     juce::UndoManager undoManager;
     juce::AudioProcessorValueTreeState apvts;
-    int currentPreset = 0;
+    int currentPreset = 0;                     // -1 when a user preset is loaded
+    juce::String currentUserPresetName;        // empty when a factory preset is loaded
     // Snapshot of all parameter values right after a preset is loaded — used by
-    // isPresetModified() to render the dim cyan "•" indicator next to the name.
+    // isPresetModified() to render the dim cyan "•" indicator next to the name
+    // and by resetToCurrentSnapshot() to revert mods.
     std::map<juce::String, float> presetSnapshot;
+    void captureSnapshotFromCurrentParams();
 
     // Transient footer status (e.g. "Preset loaded: PUNCHY") — fades after 2s.
     juce::CriticalSection statusLock;

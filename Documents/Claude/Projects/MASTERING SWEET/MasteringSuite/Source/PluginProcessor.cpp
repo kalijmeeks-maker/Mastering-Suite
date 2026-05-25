@@ -401,7 +401,105 @@ void MasteringSuiteProcessor::loadPreset(int index) {
                 presetSnapshot[p->paramID] = *v;
         }
     }
+    currentUserPresetName.clear();  // loading a factory preset clears the user-preset binding
     postStatusMessage("Preset loaded: " + getPresetNames()[currentPreset]);
+}
+
+// ────────────────────────── User presets (v1.1-1) ──────────────────────────
+
+juce::File MasteringSuiteProcessor::getUserPresetDir() {
+    // ~/Library/Application Support/Mastering Sweet/Presets/
+    // The /Library/Audio/Presets tree is root-owned on stock macOS installs,
+    // so the canonical user-writable path is Application Support.
+    auto d = juce::File::getSpecialLocation(juce::File::userApplicationDataDirectory)
+                .getChildFile("Application Support/Mastering Sweet/Presets");
+    if (!d.exists()) d.createDirectory();
+    return d;
+}
+
+void MasteringSuiteProcessor::captureSnapshotFromCurrentParams() {
+    presetSnapshot.clear();
+    for (auto* param : getParameters()) {
+        if (auto* p = dynamic_cast<juce::RangedAudioParameter*>(param)) {
+            if (auto* v = apvts.getRawParameterValue(p->paramID))
+                presetSnapshot[p->paramID] = *v;
+        }
+    }
+}
+
+static juce::String sanitizePresetName(juce::String n) {
+    n = n.replaceCharacter('/', '_').replaceCharacter('\\', '_').replaceCharacter(':', '_');
+    n = n.trim();
+    if (n.length() > 64) n = n.substring(0, 64);
+    return n;
+}
+
+juce::StringArray MasteringSuiteProcessor::listUserPresets() {
+    juce::StringArray names;
+    auto dir = getUserPresetDir();
+    if (!dir.isDirectory()) return names;
+    auto rootTag = apvts.state.getType().toString();
+    for (auto& f : dir.findChildFiles(juce::File::findFiles, false, "*.xml")) {
+        auto xml = juce::XmlDocument::parse(f);
+        if (xml != nullptr && xml->hasTagName(rootTag)) {
+            names.add(f.getFileNameWithoutExtension());
+        } else {
+            DBG("Skipping corrupt or non-matching preset: " << f.getFullPathName());
+        }
+    }
+    names.sort(true);
+    return names;
+}
+
+bool MasteringSuiteProcessor::savePresetAs(const juce::String& rawName) {
+    auto name = sanitizePresetName(rawName);
+    if (name.isEmpty()) return false;
+    auto state = apvts.copyState();
+    auto xml = state.createXml();
+    if (xml == nullptr) return false;
+    auto file = getUserPresetDir().getChildFile(name + ".xml");
+    if (!xml->writeTo(file)) {
+        DBG("Failed to write preset: " << file.getFullPathName());
+        return false;
+    }
+    currentPreset = -1;
+    currentUserPresetName = name;
+    captureSnapshotFromCurrentParams();
+    postStatusMessage("Preset saved: " + name);
+    return true;
+}
+
+bool MasteringSuiteProcessor::saveChangesToCurrentPreset() {
+    if (currentUserPresetName.isEmpty()) return false;  // factory presets are read-only
+    return savePresetAs(currentUserPresetName);
+}
+
+bool MasteringSuiteProcessor::loadUserPreset(const juce::String& name) {
+    auto file = getUserPresetDir().getChildFile(name + ".xml");
+    if (!file.existsAsFile()) {
+        DBG("User preset not found: " << file.getFullPathName());
+        return false;
+    }
+    auto xml = juce::XmlDocument::parse(file);
+    if (xml == nullptr || !xml->hasTagName(apvts.state.getType().toString())) {
+        DBG("Corrupt user preset, refusing to load: " << file.getFullPathName());
+        return false;
+    }
+    apvts.replaceState(juce::ValueTree::fromXml(*xml));
+    currentPreset = -1;
+    currentUserPresetName = name;
+    captureSnapshotFromCurrentParams();
+    postStatusMessage("Preset loaded: " + name);
+    return true;
+}
+
+void MasteringSuiteProcessor::resetToCurrentSnapshot() {
+    if (presetSnapshot.empty()) return;
+    for (auto& kv : presetSnapshot) {
+        if (auto* p = apvts.getParameter(kv.first))
+            p->setValueNotifyingHost(p->getNormalisableRange().convertTo0to1(kv.second));
+    }
+    postStatusMessage("Reset to preset");
 }
 
 juce::AudioProcessor* JUCE_CALLTYPE createPluginFilter() {
