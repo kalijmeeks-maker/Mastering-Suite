@@ -65,7 +65,78 @@ PluginEditor::PluginEditor(MasteringSuiteProcessor& proc)
     addChildComponent(valueBubble);
     valueBubble.setInterceptsMouseClicks(false, false);
 
+    // v1.0.2 §3 — listen to mouse events on EVERY descendant component so the
+    // footer toast can light up on any Slider drag (and so EqCurveDisplay can
+    // pipe its handle drags through the same setToast pipeline). Sliders still
+    // handle their own events first; we only observe.
+    addMouseListener(this, true);
+
     startTimerHz(30);
+}
+
+// Translate the slider's accent color (set per-knob via rotarySliderFillColourId)
+// into the module token shown in the toast: EQ / DYN / IMG / LIM. Any other
+// color returns empty — the toast then degrades to "PARAM · value" form rather
+// than failing.
+static juce::String moduleForAccent(juce::Colour c) {
+    const auto argb = c.getARGB();
+    if (argb == juce::Colour(mst::theme::tabEq).getARGB())  return "EQ";
+    if (argb == juce::Colour(mst::theme::tabDyn).getARGB()) return "DYN";
+    if (argb == juce::Colour(mst::theme::tabImg).getARGB()) return "IMG";
+    if (argb == juce::Colour(mst::theme::tabLim).getARGB()) return "LIM";
+    return {};
+}
+
+// Build the toast string from a slider. Reads:
+//   getTooltip()        — set to the APVTS parameter's friendly name in
+//                         each panel ctor (param->getName(64)).
+//   getTextFromValue()  — JUCE's formatted value text (honors the slider's
+//                         value-to-text decorator if installed by the param).
+//   getTextValueSuffix() — unit suffix if attached.
+static juce::String formatSliderToast(juce::Slider* s) {
+    if (s == nullptr) return {};
+    const auto accent = s->findColour(juce::Slider::rotarySliderFillColourId);
+    const auto mod    = moduleForAccent(accent);
+    auto label = s->getTooltip();
+    if (label.isEmpty()) label = "PARAM";
+    label = label.toUpperCase();
+    juce::String value = s->getTextFromValue(s->getValue());
+    auto suffix = s->getTextValueSuffix().trim();
+
+    juce::String out;
+    if (mod.isNotEmpty()) out += mod + " ";
+    out += label + " · " + value;
+    if (suffix.isNotEmpty()) out += " " + suffix;
+    return out;
+}
+
+void PluginEditor::mouseDown(const juce::MouseEvent& e) {
+    if (footer == nullptr) return;
+    if (auto* s = dynamic_cast<juce::Slider*>(e.eventComponent)) {
+        toastDragSrc      = s;
+        lastToastUpdateMs = juce::Time::getMillisecondCounterHiRes();
+        footer->setToast(formatSliderToast(s),
+                         s->findColour(juce::Slider::rotarySliderFillColourId));
+    }
+}
+
+void PluginEditor::mouseDrag(const juce::MouseEvent& e) {
+    juce::ignoreUnused(e);
+    if (footer == nullptr || toastDragSrc == nullptr) return;
+    // 30 Hz throttle per spec — drag events fire on every mouseMove and we
+    // don't need to re-format the toast at audio-thread cadence.
+    const double now = juce::Time::getMillisecondCounterHiRes();
+    if (now - lastToastUpdateMs < 33.0) return;
+    lastToastUpdateMs = now;
+    footer->setToast(formatSliderToast(toastDragSrc),
+                     toastDragSrc->findColour(juce::Slider::rotarySliderFillColourId));
+}
+
+void PluginEditor::mouseUp(const juce::MouseEvent& e) {
+    juce::ignoreUnused(e);
+    if (footer == nullptr || toastDragSrc == nullptr) return;
+    toastDragSrc = nullptr;
+    footer->clearToast();
 }
 
 void PluginEditor::KnobValueBubble::paint(juce::Graphics& g) {

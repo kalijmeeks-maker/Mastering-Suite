@@ -32,6 +32,16 @@ private:
     void sliderValueChanged(juce::Slider* s) override;
     void attachKnobListeners(juce::Component* root);
 
+    // v1.0.2 §3 — EQ Drag Toast wiring. Editor-level MouseListener is added on
+    // itself with wantsChildEvents=true so any descendant Slider drag routes
+    // here. EQ canvas handles aren't Sliders; EqCurveDisplay pipes its handle
+    // drags through the same setToast/clearToast plumbing directly.
+    void mouseDown(const juce::MouseEvent& e) override;
+    void mouseDrag(const juce::MouseEvent& e) override;
+    void mouseUp  (const juce::MouseEvent& e) override;
+    juce::Slider* toastDragSrc      = nullptr;
+    double        lastToastUpdateMs = 0.0;
+
     MasteringSuiteProcessor& processor;
     NeonLookAndFeel laf;
     juce::TooltipWindow tooltips { this, 800 };  // long delay; bubble is the primary affordance
