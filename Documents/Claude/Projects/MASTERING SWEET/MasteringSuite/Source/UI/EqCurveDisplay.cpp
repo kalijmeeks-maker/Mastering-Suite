@@ -64,9 +64,12 @@ void EqCurveDisplay::paint(juce::Graphics& g) {
     if (N > 0) {
         const float gap = 1.0f;
         const float binW = bounds.getWidth() / (float)N;
-        const float topRangeDb = 6.0f, botRangeDb = -60.0f;
+        // Headroom fix: lowered top from +6 to 0 dBFS (anything above clips visually
+        // anyway) and lifted the canvas cap from 55% → 70% so loud bins don't get
+        // a visually-flat top. The EQ curve still has the upper 30% to read against.
+        const float topRangeDb = 0.0f, botRangeDb = -60.0f;
         const float minBarH = 2.0f;
-        const float canvasH = bounds.getHeight() * 0.55f;
+        const float canvasH = bounds.getHeight() * 0.70f;
 
         auto dbToY = [&](float db) {
             db = juce::jlimit(botRangeDb, topRangeDb, db);

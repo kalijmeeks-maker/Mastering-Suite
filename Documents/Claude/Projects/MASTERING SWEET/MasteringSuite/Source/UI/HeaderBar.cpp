@@ -166,16 +166,19 @@ void HeaderBar::paint(juce::Graphics& g) {
 
 void HeaderBar::resized() {
     auto r = getLocalBounds().reduced(14, 0);
-    auto rightSide = r.removeFromRight(450);
-    
+    // 120+8+80+8+140+16+72+4+28 = 476, plus 10px slack
+    auto rightSide = r.removeFromRight(486);
+
     // Position from right to left
     oversampleButton.setBounds(rightSide.removeFromRight(120).reduced(0, 14));
-    rightSide.removeFromRight(8); // gap
+    rightSide.removeFromRight(8);   // gap
     bypassButton.setBounds(rightSide.removeFromRight(80).reduced(0, 14));
-    rightSide.removeFromRight(8); // gap
+    rightSide.removeFromRight(8);   // gap
     presetButton.setBounds(rightSide.removeFromRight(140).reduced(0, 14));
-    rightSide.removeFromRight(16); // larger gap
-    abToggle.setBounds(rightSide.removeFromRight(60).reduced(0, 14));
+    rightSide.removeFromRight(16);  // larger gap before the A/B/copy cluster
+    // A/B widened from 60 → 72 so each segment is a comfortable 36px wide and
+    // the magenta fill on A doesn't visually overpower the outlined B.
+    abToggle.setBounds(rightSide.removeFromRight(72).reduced(0, 14));
     rightSide.removeFromRight(4);
     copyABButton.setBounds(rightSide.removeFromRight(28).reduced(0, 14));
 }
