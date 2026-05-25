@@ -61,7 +61,28 @@ PluginEditor::PluginEditor(MasteringSuiteProcessor& proc)
     setWantsKeyboardFocus(true);
     addKeyListener(this);
 
+    // Floating drag-value bubble overlay (hidden until a drag begins).
+    addChildComponent(valueBubble);
+    valueBubble.setInterceptsMouseClicks(false, false);
+
     startTimerHz(30);
+}
+
+void PluginEditor::KnobValueBubble::paint(juce::Graphics& g) {
+    if (tracked == nullptr) return;
+    auto bounds = getLocalBounds().toFloat();
+    juce::Colour accent = tracked->findColour(juce::Slider::rotarySliderFillColourId);
+    if (accent == juce::Colours::transparentBlack) accent = juce::Colour(mst::theme::tabEq);
+    // Dark panelTop background, 6px corner radius, 2px accent border (Design's spec).
+    g.setColour(juce::Colour(0xFF0A0A10));
+    g.fillRoundedRectangle(bounds, 6.0f);
+    g.setColour(accent);
+    g.drawRoundedRectangle(bounds.reduced(1.0f), 6.0f, 2.0f);
+    // 13pt mono, accent-tinted value + unit suffix.
+    g.setColour(accent);
+    g.setFont(juce::Font(juce::Font::getDefaultMonospacedFontName(), 13.0f, juce::Font::plain));
+    juce::String txt = tracked->getTextFromValue(tracked->getValue());
+    g.drawText(txt, getLocalBounds(), juce::Justification::centred);
 }
 
 bool PluginEditor::keyPressed(const juce::KeyPress& k, juce::Component*) {
@@ -166,18 +187,21 @@ void PluginEditor::timerCallback() {
 
     limPanel->refresh();
     footer->refresh();
+    header->refresh();   // updates preset modified bullet
     tabBar->repaint();  // keep tab activity indicators live
 
     // Update knob touch states for all tracked sliders.
     // Hovered or pressed → snap to full glow + refresh the timestamp.
     // Otherwise fade alpha over a 600ms window from the last interaction.
     double currentTime = juce::Time::getMillisecondCounterHiRes();
+    juce::Slider* draggingNow = nullptr;
     for (auto* k : trackedSliders) {
         if (k == nullptr) continue;
         bool hot = k->isMouseOver(true) || k->isMouseButtonDown();
         if (hot) {
             k->getProperties().set("lastTouched", currentTime);
         }
+        if (k->isMouseButtonDown()) draggingNow = k;
         double last = (double)k->getProperties().getWithDefault("lastTouched", 0.0);
         float alpha = hot ? 1.0f
                           : (float)juce::jlimit(0.0, 1.0, 1.0 - (currentTime - last) / 600.0);
@@ -186,5 +210,21 @@ void PluginEditor::timerCallback() {
             k->getProperties().set("glowAlpha", alpha);
             k->repaint();
         }
+    }
+
+    // Drag-only value bubble per Design's spec — hover doesn't trigger it.
+    if (draggingNow != nullptr) {
+        lastDragged = draggingNow;
+        lastDragTimeMs = currentTime;
+        const int bw = 70, bh = 22;
+        auto local = getLocalArea(draggingNow, draggingNow->getLocalBounds());
+        valueBubble.setBounds(local.getCentreX() - bw / 2, local.getY() - bh - 4, bw, bh);
+        valueBubble.tracked = draggingNow;
+        if (!valueBubble.isVisible()) valueBubble.setVisible(true);
+        valueBubble.toFront(false);
+        valueBubble.repaint();
+    } else if (valueBubble.isVisible() && (currentTime - lastDragTimeMs) > 200.0) {
+        valueBubble.setVisible(false);
+        valueBubble.tracked = nullptr;
     }
 }

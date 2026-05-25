@@ -45,6 +45,10 @@ juce::AudioProcessorValueTreeState::ParameterLayout MasteringSuiteProcessor::cre
     auto densityParam = std::make_unique<juce::AudioParameterChoice>(juce::ParameterID("density", 1), "UI Density", juce::StringArray("Compact", "Default", "Expanded"), 1);
     params.push_back(std::move(densityParam));
 
+    // Goniometer scaling mode (Design's spec: AUTO RMS vs FIXED -20 dBFS)
+    params.push_back(std::make_unique<juce::AudioParameterChoice>(juce::ParameterID("gonioScale", 1),
+        "Goniometer Scale", juce::StringArray("Auto", "Fixed -20dB"), 0));
+
     return { params.begin(), params.end() };
 }
 
@@ -247,6 +251,42 @@ juce::AudioProcessorEditor* MasteringSuiteProcessor::createEditor() {
     return new PluginEditor (*this);
 }
 
+// ────────────────────────── A/B banks ──────────────────────────
+void MasteringSuiteProcessor::captureCurrentToBank(int bank) {
+    if (bank < 0 || bank > 1) return;
+    banks[bank].clear();
+    for (auto* param : getParameters()) {
+        if (auto* p = dynamic_cast<juce::RangedAudioParameter*>(param)) {
+            if (auto* v = apvts.getRawParameterValue(p->paramID))
+                banks[bank][p->paramID] = *v;
+        }
+    }
+}
+
+void MasteringSuiteProcessor::applyBankToParams(int bank) {
+    if (bank < 0 || bank > 1 || banks[bank].empty()) return;
+    for (auto& kv : banks[bank]) {
+        if (auto* p = apvts.getParameter(kv.first))
+            p->setValueNotifyingHost(p->getNormalisableRange().convertTo0to1(kv.second));
+    }
+}
+
+void MasteringSuiteProcessor::switchToBank(int bank) {
+    if (bank == activeBank || bank < 0 || bank > 1) return;
+    captureCurrentToBank(activeBank);  // freeze whatever the user just did
+    activeBank = bank;
+    applyBankToParams(bank);
+    postStatusMessage(juce::String("Switched to bank ") + (bank == 0 ? "A" : "B"));
+}
+
+void MasteringSuiteProcessor::copyActiveBankToOther() {
+    captureCurrentToBank(activeBank);
+    int other = 1 - activeBank;
+    banks[other] = banks[activeBank];
+    postStatusMessage(juce::String(activeBank == 0 ? "A" : "B") + " → "
+                      + (other == 0 ? "A" : "B"));
+}
+
 // ────────────────────────── Factory presets ──────────────────────────
 // Five hand-crafted starting points. Each preset writes a handful of
 // parameters via setValueNotifyingHost, then loadPreset stores the index
@@ -264,6 +304,32 @@ namespace {
     void setI(juce::AudioProcessorValueTreeState& apvts, const juce::String& id, int v) {
         setF(apvts, id, (float)v);
     }
+}
+
+// Returns true if any current parameter value differs from what we snapshot'd
+// in the last loadPreset() call. Used by the header to render the "•" bullet.
+bool MasteringSuiteProcessor::isPresetModified() const {
+    if (presetSnapshot.empty()) return false;
+    for (auto& kv : presetSnapshot) {
+        if (auto* p = apvts.getRawParameterValue(kv.first)) {
+            if (std::abs(*p - kv.second) > 1e-4f) return true;
+        }
+    }
+    return false;
+}
+
+void MasteringSuiteProcessor::postStatusMessage(const juce::String& msg) {
+    const juce::ScopedLock sl(statusLock);
+    currentStatus = msg;
+    statusPostedAtMs = juce::Time::getMillisecondCounterHiRes();
+}
+
+juce::String MasteringSuiteProcessor::getStatusMessage() {
+    const juce::ScopedLock sl(statusLock);
+    // 2s toast lifetime per Design's spec.
+    if (juce::Time::getMillisecondCounterHiRes() - statusPostedAtMs > 2000.0)
+        return {};
+    return currentStatus;
 }
 
 void MasteringSuiteProcessor::loadPreset(int index) {
@@ -325,6 +391,17 @@ void MasteringSuiteProcessor::loadPreset(int index) {
         default: // DEFAULT — leave at neutral.
             break;
     }
+
+    // Snapshot final state so isPresetModified() can detect any future change.
+    presetSnapshot.clear();
+    auto allParams = apvts.state.getChildWithName("PARAM");  // not used — iterate via params layout
+    for (auto* param : getParameters()) {
+        if (auto* p = dynamic_cast<juce::RangedAudioParameter*>(param)) {
+            if (auto* v = apvts.getRawParameterValue(p->paramID))
+                presetSnapshot[p->paramID] = *v;
+        }
+    }
+    postStatusMessage("Preset loaded: " + getPresetNames()[currentPreset]);
 }
 
 juce::AudioProcessor* JUCE_CALLTYPE createPluginFilter() {

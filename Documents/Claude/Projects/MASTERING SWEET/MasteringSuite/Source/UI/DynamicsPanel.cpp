@@ -60,10 +60,37 @@ void DynamicsPanel::paint(juce::Graphics& g) {
     drawLabel(*releaseK, "RELEASE");
     drawLabel(*makeupK, "MAKEUP");
     drawLabel(*mixK, "MIX");
+
+    // ── Compressor GR side meter (Design D9): 8-segment orange vertical column
+    // on the right edge, top = 0 dB, bottom = -12 dB. Small but useful.
+    auto meter = juce::Rectangle<float>(bounds.getRight() - 30, 44, 20, bounds.getHeight() - 88);
+    g.setColour(juce::Colour(mst::theme::panelInner));
+    g.fillRoundedRectangle(meter, 3.0f);
+    g.setColour(juce::Colour(mst::theme::border).withAlpha(0.4f));
+    g.drawRoundedRectangle(meter, 3.0f, 1.0f);
+    const int N = 8;
+    const float gap = 1.5f;
+    const float segH = (meter.getHeight() - 8.0f - gap * (N - 1)) / (float)N;
+    float gr = std::abs(processor.getCompressor().getCurrentGainReduction());
+    float norm = juce::jlimit(0.0f, 1.0f, gr / 12.0f);
+    int lit = (int)(norm * N);
+    for (int i = 0; i < N; ++i) {
+        float y = meter.getY() + 4.0f + i * (segH + gap);
+        bool on = (i < lit);
+        juce::Colour c = juce::Colour(mst::theme::tabDyn);  // orange
+        g.setColour(on ? c : c.withAlpha(0.10f));
+        g.fillRect(meter.getX() + 3, y, meter.getWidth() - 6, segH);
+    }
+    // "GR" label
+    g.setFont(juce::Font(7.0f).boldened());
+    g.setColour(juce::Colour(mst::theme::textLow));
+    g.drawText("GR", meter.toNearestInt().removeFromBottom(12), juce::Justification::centred);
 }
 
 void DynamicsPanel::resized() {
     auto bounds = getLocalBounds();
+    // Reserve 36px on the right for the dedicated GR side meter (drawn in paint()).
+    bounds.removeFromRight(36);
     auto knobArea = bounds.reduced(20, 20);
     knobArea.removeFromTop(bounds.getHeight() * 0.55f); // Leave room for curve
 

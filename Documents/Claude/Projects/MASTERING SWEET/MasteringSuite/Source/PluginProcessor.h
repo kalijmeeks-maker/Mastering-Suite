@@ -47,6 +47,20 @@ public:
     static juce::StringArray getPresetNames();
     void loadPreset(int index);
     int getCurrentPreset() const { return currentPreset; }
+    // True iff any parameter differs from the snapshot recorded by the last loadPreset().
+    bool isPresetModified() const;
+
+    // A/B parameter state banks (Design D10). switchToBank saves the live state
+    // into the current bank, then applies the target bank's snapshot. copyABank
+    // copies the active bank into the other one (the ↔ affordance).
+    void switchToBank(int bank);
+    void copyActiveBankToOther();
+    int  getActiveBank() const { return activeBank; }
+
+    // Lightweight status pub/sub for the footer "v1.0 vs transient toast" line.
+    // Setter is thread-safe; the FooterBar polls on its 30Hz refresh.
+    void postStatusMessage(const juce::String& msg);
+    juce::String getStatusMessage();   // returns current toast or "" if expired
 
     float getCPUUsage() { return 0.012f; } // Placeholder
 
@@ -104,6 +118,20 @@ private:
     juce::UndoManager undoManager;
     juce::AudioProcessorValueTreeState apvts;
     int currentPreset = 0;
+    // Snapshot of all parameter values right after a preset is loaded — used by
+    // isPresetModified() to render the dim cyan "•" indicator next to the name.
+    std::map<juce::String, float> presetSnapshot;
+
+    // Transient footer status (e.g. "Preset loaded: PUNCHY") — fades after 2s.
+    juce::CriticalSection statusLock;
+    juce::String currentStatus;
+    double statusPostedAtMs = 0.0;
+
+    // A/B banks — each is a paramID → value snapshot. Both banks start equal.
+    std::array<std::map<juce::String, float>, 2> banks;
+    int activeBank = 0;
+    void captureCurrentToBank(int bank);
+    void applyBankToParams(int bank);
 
     // DSP Modules
     EbuR128Meter meter;

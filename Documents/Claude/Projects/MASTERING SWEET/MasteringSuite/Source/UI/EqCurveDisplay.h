@@ -38,6 +38,10 @@ private:
     int draggingHandleIndex = -1;
     
     std::vector<float> spectrumBuffer;
+    // Per-bin peak-hold (dB) and the time it was last set. Decays over 1.5s
+    // after a 200ms hold so dots read as "ghost peaks" above the live bars.
+    std::vector<float>  peakHoldDb;
+    std::vector<double> peakHoldTimeMs;
     
     void updatePath();
     float freqToX(float freq);

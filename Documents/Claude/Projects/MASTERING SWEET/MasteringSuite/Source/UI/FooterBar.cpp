@@ -45,16 +45,26 @@ void FooterBar::paint(juce::Graphics& g) {
     // Footer center: Density toggle
     densityToggle->setBounds(bounds.getCentreX() - 100, 4, 200, 24);
 
-    // Footer right: green dot + DSP %, CPU %, version
+    // Footer right: green dot + DSP %, CPU %, plus a context-aware status slot.
+    // The slot shows v1.0 at rest; transient toasts ("Preset loaded: PUNCHY",
+    // "Sample rate: 96 kHz") fade in for 2s on relevant events.
     g.setColour(juce::Colour(mst::theme::statusGreen));
-    g.fillEllipse(bounds.getRight() - 180.0f, bounds.getCentreY() - 3.0f, 6.0f, 6.0f);
+    g.fillEllipse(bounds.getRight() - 280.0f, bounds.getCentreY() - 3.0f, 6.0f, 6.0f);
 
     float cpu = processor.getCPUUsage() * 100.0f;
-    juce::String rightText = juce::String::fromUTF8("DSP ") + juce::String(cpu, 1) + "% \u00B7 CPU " + juce::String(cpu * 0.8f, 1) + "% \u00B7 v1.0";
-
+    juce::String metrics = juce::String::fromUTF8("DSP ") + juce::String(cpu, 1)
+                         + juce::String::fromUTF8("% \u00B7 CPU ") + juce::String(cpu * 0.8f, 1) + "%";
     g.setFont(juce::Font(9.0f));
     g.setColour(juce::Colour(mst::theme::textMid));
-    g.drawText(rightText, bounds.getRight() - 170.0f, 0, 160, (int)bounds.getHeight(), juce::Justification::centredLeft);
+    g.drawText(metrics, bounds.getRight() - 270.0f, 0, 130, (int)bounds.getHeight(), juce::Justification::centredLeft);
+
+    // Status slot (right-aligned, mono).
+    juce::String toast = processor.getStatusMessage();
+    juce::String statusText = toast.isNotEmpty() ? toast : juce::String("v1.0");
+    g.setColour(toast.isNotEmpty() ? juce::Colour(mst::theme::tabEq)   // cyan when active toast
+                                   : juce::Colour(mst::theme::textLow));
+    g.drawText(statusText, bounds.getRight() - 140.0f, 0, 130, (int)bounds.getHeight(),
+               juce::Justification::centredRight);
 }
 
 void FooterBar::resized() {}

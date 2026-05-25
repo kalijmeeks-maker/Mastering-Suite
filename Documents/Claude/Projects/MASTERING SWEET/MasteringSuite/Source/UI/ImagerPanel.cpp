@@ -16,6 +16,26 @@ ImagerPanel::ImagerPanel(MasteringSuiteProcessor& proc, NeonLookAndFeel& laf)
 
     createKnob(widthK, widthA, "imgWidth", juce::Colour(mst::theme::tabImg));
     createKnob(panK, panA, "imgPan", juce::Colour(mst::theme::tabImg));
+
+    // Two-state pill: AUTO (RMS) vs FIXED -20 dB. Cycles the gonioScale choice param.
+    scaleToggle = std::make_unique<PillButton>();
+    scaleToggle->setVariant(PillButton::Variant::Outlined);
+    scaleToggle->setAccentColor(juce::Colour(mst::theme::tabImg));
+    addAndMakeVisible(*scaleToggle);
+    auto refreshToggleLabel = [this] {
+        if (auto* p = dynamic_cast<juce::AudioParameterChoice*>(processor.getAPVTS().getParameter("gonioScale"))) {
+            scaleToggle->setButtonText(p->choices[p->getIndex()].toUpperCase());
+            scaleToggle->setToggleState(p->getIndex() == 0, juce::dontSendNotification);
+        }
+    };
+    scaleToggle->onClick = [this, refreshToggleLabel] {
+        if (auto* p = dynamic_cast<juce::AudioParameterChoice*>(processor.getAPVTS().getParameter("gonioScale"))) {
+            int next = (p->getIndex() + 1) % p->choices.size();
+            p->setValueNotifyingHost(p->getNormalisableRange().convertTo0to1((float)next));
+            refreshToggleLabel();
+        }
+    };
+    refreshToggleLabel();
 }
 
 void ImagerPanel::paint(juce::Graphics& g) {
@@ -38,6 +58,7 @@ void ImagerPanel::paint(juce::Graphics& g) {
 
     // Goniometer Area
     auto visualArea = bounds.reduced(100, 40).withY(40).withHeight(bounds.getHeight() - 150);
+    lastGonioArea = visualArea;
     drawGoniometer(g, visualArea);
 }
 
@@ -53,30 +74,60 @@ void ImagerPanel::drawGoniometer(juce::Graphics& g, juce::Rectangle<float> area)
     std::array<float, 1024> left, right;
     processor.getGoniometerSamples(left.data(), right.data());
 
-    // Auto-scale: normalize by the block's peak so a -20 dBFS signal still fills
-    // the field instead of collapsing into a tiny center smudge.
-    // Floor at 0.1 (-20 dBFS) so silence doesn't blow up to full-scale.
-    float peak = 0.0f;
+    // RMS over the last ~200ms window (1024 samples ≈ 21ms @ 48k — close enough
+    // for visual smoothing). Design's call: AUTO mode uses 2×RMS → 80% radius
+    // so the scatter stays stable across material from -44 LUFS classical to -8 LUFS EDM.
+    double sumSq = 0.0;
     for (int i = 0; i < 1024; ++i) {
-        peak = std::max(peak, std::max(std::abs(left[i]), std::abs(right[i])));
+        sumSq += (double)left[i]  * left[i];
+        sumSq += (double)right[i] * right[i];
     }
-    const float norm = 1.0f / std::max(0.1f, peak);
+    const float rms = (float)std::sqrt(sumSq / (2.0 * 1024));
+    const float rmsDb = juce::Decibels::gainToDecibels(rms, -100.0f);
 
-    // Field radius: 45% of min(width, height) — keep dots inside the ellipse.
     const float radius = juce::jmin(area.getWidth(), area.getHeight()) * 0.45f;
     const float cx = area.getCentreX();
     const float cy = area.getCentreY();
+
+    // Low-signal caption per Design — no scatter, just a dim inline label.
+    if (rmsDb < -60.0f) {
+        g.setColour(juce::Colour(mst::theme::textLow).withAlpha(0.7f));
+        g.setFont(juce::Font(10.0f).boldened());
+        g.drawText("INPUT TOO QUIET",
+                   area.withSizeKeepingCentre(area.getWidth(), 20).toNearestInt(),
+                   juce::Justification::centred);
+        return;
+    }
+
+    // Pick scale mode. Default param value (0) is AUTO; 1 is FIXED -20 dBFS.
+    int mode = 0;
+    if (auto* m = processor.getAPVTS().getRawParameterValue("gonioScale"))
+        mode = (int)*m;
+
+    float norm;
+    if (mode == 1) {
+        // FIXED: a full-scale (1.0) sample reaches 80% of the field at -20 dBFS reference.
+        norm = 1.0f / 0.1f;   // = 10x — so 0.1 (-20 dBFS) maps to 1.0 (full radius)
+    } else {
+        // AUTO RMS: 2× current RMS reaches 80% radius, with a sane floor.
+        const float effRms = juce::jmax(0.005f, rms);  // floor -46 dBFS so micro-quiet signals still draw something
+        norm = 0.8f / (2.0f * effRms);
+    }
+
     const juce::Colour scatter = juce::Colour(mst::theme::tabImg);
 
-    // Connected-line phosphor trace (every sample) + dots at samples for grain.
+    // Connected-line phosphor trace + brighter dots.
     juce::Path trace;
     bool started = false;
     for (int i = 0; i < 1024; ++i) {
         float l = left[i] * norm;
         float r = right[i] * norm;
-        // Standard M/S basis: vertical = (L+R)/√2 (mid), horizontal = (L-R)/√2 (side)
+        // M/S basis: vertical = (L+R)/√2, horizontal = (L-R)/√2
         float sx = (l - r) * 0.7071f * radius;
         float sy = (l + r) * 0.7071f * radius;
+        // Clamp inside the field so a transient spike doesn't paint outside the ellipse.
+        sx = juce::jlimit(-radius, radius, sx);
+        sy = juce::jlimit(-radius, radius, sy);
         float dx = cx + sx;
         float dy = cy - sy;
         if (!std::isfinite(dx) || !std::isfinite(dy)) continue;
@@ -86,13 +137,12 @@ void ImagerPanel::drawGoniometer(juce::Graphics& g, juce::Rectangle<float> area)
     g.setColour(scatter.withAlpha(0.45f));
     g.strokePath(trace, juce::PathStrokeType(0.8f));
 
-    // Bright dots every 2nd sample on top of the trace for the classic look.
     g.setColour(scatter.withAlpha(0.85f));
     for (int i = 0; i < 1024; i += 2) {
         float l = left[i] * norm;
         float r = right[i] * norm;
-        float sx = (l - r) * 0.7071f * radius;
-        float sy = (l + r) * 0.7071f * radius;
+        float sx = juce::jlimit(-radius, radius, (l - r) * 0.7071f * radius);
+        float sy = juce::jlimit(-radius, radius, (l + r) * 0.7071f * radius);
         float dx = cx + sx;
         float dy = cy - sy;
         if (!std::isfinite(dx) || !std::isfinite(dy)) continue;
@@ -108,6 +158,10 @@ void ImagerPanel::resized() {
     int knobW = 80;
     widthK->setBounds(bounds.getWidth() / 2 - knobW - 10, knobArea.getY(), knobW, knobW);
     panK->setBounds(bounds.getWidth() / 2 + 10, knobArea.getY(), knobW, knobW);
+
+    // Goniometer scale toggle: small pill anchored bottom-right under the goniometer area.
+    if (scaleToggle)
+        scaleToggle->setBounds(bounds.getWidth() - 90, knobArea.getY() + 8, 70, 22);
 }
 
 void ImagerPanel::refresh() {

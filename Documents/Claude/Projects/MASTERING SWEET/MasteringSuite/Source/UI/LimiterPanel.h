@@ -12,6 +12,7 @@ public:
 
     void paint(juce::Graphics& g) override;
     void resized() override;
+    void mouseDown(const juce::MouseEvent& e) override;
     void refresh();
 
 private:
@@ -25,6 +26,11 @@ private:
     std::unique_ptr<juce::AudioProcessorValueTreeState::SliderAttachment> threshA, releaseA, makeupA, ceilingA;
     std::unique_ptr<juce::AudioProcessorValueTreeState::ComboBoxAttachment> styleA;
     std::unique_ptr<juce::AudioProcessorValueTreeState::ButtonAttachment> truePeakA;
+
+    // Mode picker cells (left side, per Design v2: TRANSPARENT/PUNCHY/WARM with descriptions)
+    void drawModePicker(juce::Graphics& g, juce::Rectangle<int> area);
+    juce::Rectangle<int> modeArea;
+    juce::Rectangle<int> meterArea;
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(LimiterPanel)
 };

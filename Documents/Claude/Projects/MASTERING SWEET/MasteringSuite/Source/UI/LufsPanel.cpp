@@ -45,27 +45,53 @@ void LufsPanel::paint(juce::Graphics& g) {
     const float segGap = 1.5f;
     const float segH = (meterArea.getHeight() - 4) / segments;
 
-    auto drawColumn = [&](float colX, float dbLevel) {
+    // Update peak-hold trackers. Hold for 3s, then decay linearly over 2s.
+    const double nowMs = juce::Time::getMillisecondCounterHiRes();
+    auto updatePeakHold = [&](float& hold, double& holdTime, float currentDb) {
+        if (currentDb > hold) {
+            hold = currentDb;
+            holdTime = nowMs;
+        } else {
+            double age = nowMs - holdTime;
+            if (age > 3000.0) {
+                // Decay: lose 30 dB over 2s linear after 3s hold
+                float drop = (float)((age - 3000.0) / 2000.0) * 30.0f;
+                hold = juce::jmax(currentDb, hold - drop);
+                holdTime = nowMs;
+            }
+        }
+    };
+    updatePeakHold(peakHoldL, peakHoldTimeL, processor.getChannelLevelL());
+    updatePeakHold(peakHoldR, peakHoldTimeR, processor.getChannelLevelR());
+
+    auto drawColumn = [&](float colX, float dbLevel, float peakDb) {
         float normalized = juce::jlimit(0.0f, 1.0f, (dbLevel + 60.0f) / 60.0f);
         int litSegs = (int)(normalized * segments);
         for (int i = 0; i < segments; ++i) {
             float y = meterArea.getBottom() - 2 - (i + 1) * segH;
             // v2 color grade top→bottom: red → orange → yellow → lime → mint → dark mint
-            juce::Colour c = (i >= 11) ? juce::Colour(0xFFFF3A4D)     // top 2: red
-                           : (i >= 9)  ? juce::Colour(0xFFFF8A3A)     // 2: orange
-                           : (i == 8)  ? juce::Colour(0xFFFFD54A)     // 1: yellow
-                           : (i == 7)  ? juce::Colour(0xFFB9FF3A)     // 1: lime
-                           : (i >= 4)  ? juce::Colour(0xFF3AFFB0)     // 3: mint
-                                       : juce::Colour(0xFF2A8A6A);    // bottom: dark mint
+            juce::Colour c = (i >= 11) ? juce::Colour(0xFFFF3A4D)
+                           : (i >= 9)  ? juce::Colour(0xFFFF8A3A)
+                           : (i == 8)  ? juce::Colour(0xFFFFD54A)
+                           : (i == 7)  ? juce::Colour(0xFFB9FF3A)
+                           : (i >= 4)  ? juce::Colour(0xFF3AFFB0)
+                                       : juce::Colour(0xFF2A8A6A);
             g.setColour(i < litSegs ? c : c.withAlpha(0.10f));
             g.fillRect(colX, y, chW, segH - segGap);
+        }
+        // Peak-hold marker: 1px white line at the highest level observed.
+        if (peakDb > -60.0f) {
+            float peakNorm = juce::jlimit(0.0f, 1.0f, (peakDb + 60.0f) / 60.0f);
+            float py = meterArea.getBottom() - 2 - peakNorm * (segH * segments);
+            g.setColour(juce::Colours::white.withAlpha(0.9f));
+            g.fillRect(colX, py, chW, 1.0f);
         }
     };
 
     const float colL = meterArea.getX() + 2;
     const float colR = colL + chW + 4;
-    drawColumn(colL, processor.getChannelLevelL());
-    drawColumn(colR, processor.getChannelLevelR());
+    drawColumn(colL, processor.getChannelLevelL(), peakHoldL);
+    drawColumn(colR, processor.getChannelLevelR(), peakHoldR);
 
     // Per-column letter labels
     g.setFont(juce::Font(7.0f).boldened());

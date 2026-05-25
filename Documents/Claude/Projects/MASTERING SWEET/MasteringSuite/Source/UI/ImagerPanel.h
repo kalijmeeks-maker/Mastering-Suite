@@ -2,6 +2,7 @@
 #include <JuceHeader.h>
 #include "Theme.h"
 #include "NeonLookAndFeel.h"
+#include "PillButton.h"
 
 class MasteringSuiteProcessor;
 
@@ -22,9 +23,11 @@ private:
 
     std::unique_ptr<juce::Slider> widthK, panK;
     std::unique_ptr<juce::AudioProcessorValueTreeState::SliderAttachment> widthA, panA;
+    std::unique_ptr<PillButton> scaleToggle;  // AUTO / -20 dB toggle below goniometer
 
     std::deque<juce::Point<float>> scopePoints;
     static constexpr int maxPoints = 512;
+    juce::Rectangle<float> lastGonioArea;     // tracked so we can lay out the toggle relative to it
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(ImagerPanel)
 };

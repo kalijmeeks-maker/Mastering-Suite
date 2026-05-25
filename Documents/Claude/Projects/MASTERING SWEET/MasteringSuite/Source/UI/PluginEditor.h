@@ -34,8 +34,19 @@ private:
 
     MasteringSuiteProcessor& processor;
     NeonLookAndFeel laf;
-    juce::TooltipWindow tooltips { this, 500 };
+    juce::TooltipWindow tooltips { this, 800 };  // long delay; bubble is the primary affordance
     std::vector<juce::Slider*> trackedSliders;
+
+    // Floating value bubble that appears above the currently-dragged knob.
+    // Per Design's spec: 13pt SF Mono numeric + unit suffix, 2px accent stroke,
+    // dark panelTop bg, 6px corner radius, hides on mouseUp + 200ms.
+    struct KnobValueBubble : public juce::Component {
+        juce::Slider* tracked = nullptr;
+        void paint(juce::Graphics& g) override;
+    };
+    KnobValueBubble valueBubble;
+    juce::Slider* lastDragged = nullptr;
+    double lastDragTimeMs = 0.0;
 
     std::unique_ptr<HeaderBar> header;
     std::unique_ptr<FooterBar> footer;
