@@ -36,7 +36,11 @@ void LufsPanel::paint(juce::Graphics& g) {
     g.drawText("INTEGRATED", 16, 95, 100, 12, juce::Justification::topLeft);
 
     // Dual L+R 13-segment Color-Graded Bar Meter (v2 design)
-    auto meterArea = bounds.removeFromRight(96).reduced(8, 40);
+    // 120px container = 80px meter + 20px label strip (inside panel bounds —
+    // earlier 96px version drew labels at +3 past meterArea.getRight() which
+    // landed past the panel edge and got clipped).
+    auto meterArea  = bounds.removeFromRight(120).reduced(8, 40);
+    auto labelStrip = meterArea.removeFromRight(20);
     g.setColour(juce::Colour(mst::theme::panelInner));
     g.fillRoundedRectangle(meterArea, 4.0f);
 
@@ -99,11 +103,12 @@ void LufsPanel::paint(juce::Graphics& g) {
     g.drawText("L", (int)colL, (int)meterArea.getBottom(), (int)chW, 10, juce::Justification::centred);
     g.drawText("R", (int)colR, (int)meterArea.getBottom(), (int)chW, 10, juce::Justification::centred);
 
-    // Shared scale labels along the right edge
+    // Shared scale labels in the reserved right strip (inside panel bounds).
     g.setFont(juce::Font(7.0f));
+    g.setColour(juce::Colour(mst::theme::textLow));
     for (int db : {0, -6, -12, -18, -24, -36, -48}) {
         float y = meterArea.getBottom() - ((db + 60.0f) / 60.0f) * meterArea.getHeight();
-        g.drawText(juce::String(db), meterArea.getRight() + 3, (int)y - 4, 15, 8, juce::Justification::centredLeft);
+        g.drawText(juce::String(db), labelStrip.getX() + 3, (int)y - 4, 15, 8, juce::Justification::centredLeft);
     }
 
     // Readout Column (Anchored to top-right of center area)
