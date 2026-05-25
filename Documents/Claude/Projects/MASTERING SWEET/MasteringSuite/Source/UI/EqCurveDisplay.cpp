@@ -251,27 +251,40 @@ float EqCurveDisplay::yToGain(float y) {
 }
 
 // v1.0.2 §3 helpers — build the footer toast string from a band's live APVTS
-// state. Format: "EQ B<n+1> · <freq> · <gain> · Q <q> · <type>". Edge handles
-// (HPF/LPF, indices 0 and 5) carry a single Freq value and no Gain/Q row.
+// state. Format matches Design spec: "EQ B<n+1> · <freq> · <gain> · Q <q> · <type>"
+// where freq auto-picks Hz vs kHz, gain carries the sign, and Q renders to two
+// decimals. EQ params don't have a stringFromValueFunction so we format
+// locally from the raw values rather than relying on getCurrentValueAsText().
 static juce::String formatEqHandleToast(juce::AudioProcessorValueTreeState& apvts, int i) {
     const auto id = juce::String("eq") + juce::String(i);
-    auto getNorm = [&](const juce::String& sfx) -> juce::String {
+    auto getRaw = [&](const juce::String& sfx) -> float {
         if (auto* p = apvts.getParameter(id + sfx))
-            return p->getCurrentValueAsText();
-        return {};
+            return p->getNormalisableRange().convertFrom0to1(p->getValue());
+        return 0.0f;
     };
 
     juce::String label = juce::String("EQ B") + juce::String(i + 1);
-    juce::String freq = getNorm("Freq");
-    juce::String gain = getNorm("Gain");
-    juce::String q    = getNorm("Q");
-    juce::String type = getNorm("Type");
 
-    juce::String out = label;
-    if (freq.isNotEmpty()) out += " · " + freq;
-    if (gain.isNotEmpty()) out += " · " + gain;
-    if (q.isNotEmpty())    out += " · Q " + q;
-    if (type.isNotEmpty()) out += " · " + type.toUpperCase();
+    const float freq = getRaw("Freq");
+    const float gain = getRaw("Gain");
+    const float q    = getRaw("Q");
+
+    juce::String freqStr = (freq >= 1000.0f)
+        ? juce::String(freq / 1000.0f, 2) + " kHz"
+        : juce::String((int)std::round(freq))  + " Hz";
+
+    juce::String gainStr;
+    if (std::abs(gain) < 0.05f) gainStr = "0.0 dB";
+    else                        gainStr = (gain > 0.0f ? "+" : "") + juce::String(gain, 1) + " dB";
+
+    juce::String qStr = juce::String(q, 2);
+
+    juce::String typeStr;
+    if (auto* p = apvts.getParameter(id + "Type"))
+        typeStr = p->getCurrentValueAsText().toUpperCase();
+
+    juce::String out = label + " · " + freqStr + " · " + gainStr + " · Q " + qStr;
+    if (typeStr.isNotEmpty()) out += " · " + typeStr;
     return out;
 }
 
