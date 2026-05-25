@@ -28,6 +28,7 @@ private:
     std::deque<juce::Point<float>> scopePoints;
     static constexpr int maxPoints = 512;
     juce::Rectangle<float> lastGonioArea;     // tracked so we can lay out the toggle relative to it
+    float rmsSmoothed = -1.0f;                // EMA-smoothed RMS for goniometer auto-scale (-1 = uninit, snaps on first frame)
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(ImagerPanel)
 };

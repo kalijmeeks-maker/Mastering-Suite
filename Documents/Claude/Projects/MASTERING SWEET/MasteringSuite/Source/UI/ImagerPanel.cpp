@@ -74,15 +74,24 @@ void ImagerPanel::drawGoniometer(juce::Graphics& g, juce::Rectangle<float> area)
     std::array<float, 1024> left, right;
     processor.getGoniometerSamples(left.data(), right.data());
 
-    // RMS over the last ~200ms window (1024 samples ≈ 21ms @ 48k — close enough
-    // for visual smoothing). Design's call: AUTO mode uses 2×RMS → 80% radius
-    // so the scatter stays stable across material from -44 LUFS classical to -8 LUFS EDM.
+    // RMS over the last 1024-sample window (≈ 21ms @ 48k). Raw RMS drove the
+    // AUTO-scale norm directly, but block-to-block variance made the scatter's
+    // size pop visibly on dynamic material. Now we smooth via a one-pole EMA
+    // (α=0.15 → ~200ms time constant) so the scale settles cleanly. Loud→quiet
+    // transitions take a beat to shrink — Design's call, intentional.
     double sumSq = 0.0;
     for (int i = 0; i < 1024; ++i) {
         sumSq += (double)left[i]  * left[i];
         sumSq += (double)right[i] * right[i];
     }
-    const float rms = (float)std::sqrt(sumSq / (2.0 * 1024));
+    const float rmsRaw = (float)std::sqrt(sumSq / (2.0 * 1024));
+    if (rmsSmoothed < 0.0f) {
+        rmsSmoothed = rmsRaw;                // first frame: snap, no settle-in
+    } else {
+        constexpr float alpha = 0.15f;
+        rmsSmoothed = alpha * rmsRaw + (1.0f - alpha) * rmsSmoothed;
+    }
+    const float rms = rmsSmoothed;
     const float rmsDb = juce::Decibels::gainToDecibels(rms, -100.0f);
 
     const float radius = juce::jmin(area.getWidth(), area.getHeight()) * 0.45f;
