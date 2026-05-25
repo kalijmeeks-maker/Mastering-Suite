@@ -125,37 +125,44 @@ void ImagerPanel::drawGoniometer(juce::Graphics& g, juce::Rectangle<float> area)
 
     const juce::Colour scatter = juce::Colour(mst::theme::tabImg);
 
-    // Connected-line phosphor trace + brighter dots.
-    juce::Path trace;
-    bool started = false;
-    for (int i = 0; i < 1024; ++i) {
-        float l = left[i] * norm;
-        float r = right[i] * norm;
+    // Persistence-of-vision trail per Design v1.0.2 §1: maintain a ring of
+    // recent stereo samples across frames, then draw each with an alpha that
+    // decays with age. Newest dots full-bright; oldest fade to transparent.
+    // Explicit per-dot alpha, not an overlay rect — keeps the violet color
+    // pure and avoids the muddied look of fade-rect compositing.
+    //
+    // Decimation: 1024 audio samples / 25 ≈ 41 new entries per repaint.
+    // 30 Hz × 41 = 1230 samples/sec → 960-entry ring drains in ~780 ms.
+    constexpr int decimation = 25;
+    for (int i = 0; i < 1024; i += decimation) {
+        scopePoints.push_back({ left[i], right[i] });  // x = L, y = R
+    }
+    while ((int)scopePoints.size() > maxPoints) {
+        scopePoints.pop_front();
+    }
+
+    // Draw oldest → newest so fresh dots paint on top of decayed ones. Front
+    // of deque is oldest (age = 1), back is newest (age = 0). Alpha curve
+    // pow(1 - age, 1.8) per spec — exponent > 1 keeps the head bright and
+    // pulls the tail down sharply at the end (looks like a comet, not a fog).
+    const int ringN = (int)scopePoints.size();
+    for (int i = 0; i < ringN; ++i) {
+        const auto& s = scopePoints[(size_t)i];
+        const float l = s.x * norm;
+        const float r = s.y * norm;
         // M/S basis: vertical = (L+R)/√2, horizontal = (L-R)/√2
         float sx = (l - r) * 0.7071f * radius;
         float sy = (l + r) * 0.7071f * radius;
-        // Clamp inside the field so a transient spike doesn't paint outside the ellipse.
         sx = juce::jlimit(-radius, radius, sx);
         sy = juce::jlimit(-radius, radius, sy);
-        float dx = cx + sx;
-        float dy = cy - sy;
+        const float dx = cx + sx;
+        const float dy = cy - sy;
         if (!std::isfinite(dx) || !std::isfinite(dy)) continue;
-        if (!started) { trace.startNewSubPath(dx, dy); started = true; }
-        else            trace.lineTo(dx, dy);
-    }
-    g.setColour(scatter.withAlpha(0.45f));
-    g.strokePath(trace, juce::PathStrokeType(0.8f));
 
-    g.setColour(scatter.withAlpha(0.85f));
-    for (int i = 0; i < 1024; i += 2) {
-        float l = left[i] * norm;
-        float r = right[i] * norm;
-        float sx = juce::jlimit(-radius, radius, (l - r) * 0.7071f * radius);
-        float sy = juce::jlimit(-radius, radius, (l + r) * 0.7071f * radius);
-        float dx = cx + sx;
-        float dy = cy - sy;
-        if (!std::isfinite(dx) || !std::isfinite(dy)) continue;
-        g.fillEllipse(dx - 1.0f, dy - 1.0f, 2.0f, 2.0f);
+        const float age   = (ringN > 1) ? 1.0f - (float)i / (float)(ringN - 1) : 0.0f;
+        const float alpha = std::pow(1.0f - age, 1.8f);
+        g.setColour(scatter.withAlpha(alpha));
+        g.fillEllipse(dx - 1.2f, dy - 1.2f, 2.4f, 2.4f);
     }
 }
 
