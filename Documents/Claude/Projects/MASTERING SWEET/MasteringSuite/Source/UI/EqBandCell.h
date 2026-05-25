@@ -84,15 +84,14 @@ public:
         const float vCol  = bounds.getRight() - pad;
         const float vW    = vCol - kCol - 4.0f;
 
-        auto drawRow = [&](int row, const char* k, const juce::String& v) {
+        auto drawRow = [&](int row, const char* k, const juce::String& v, juce::Colour valColor) {
             float y = rowY0 + row * rowH;
             g.setFont(juce::Font(8.0f));
             g.setColour(juce::Colour(mst::theme::textLow));
             g.drawText(k, juce::Rectangle<float>(kCol, y, 40, rowH).toNearestInt(),
                        juce::Justification::centredLeft);
             g.setFont(juce::Font(9.0f));
-            // Gain row uses cyan for boost, soft-red for cut (v2 spec)
-            g.setColour(juce::Colour(mst::theme::textHigh));
+            g.setColour(valColor);
             g.drawText(v, juce::Rectangle<float>(kCol + 22, y, vW - 18, rowH).toNearestInt(),
                        juce::Justification::centredRight);
         };
@@ -101,15 +100,23 @@ public:
         juce::String gainStr = juce::String(gainDb, 1);
         juce::String qStr    = juce::String(q, 2);
 
+        // v2 spec: gain text is cyan for boost, red for cut, neutral when 0.
+        const juce::Colour neutral = juce::Colour(mst::theme::textHigh);
+        const juce::Colour cutCol  = juce::Colour(0xFFFF5B3A);   // soft red
+        const juce::Colour boostCol = juce::Colour(0xFF6CD6FF);  // cyan
+        const juce::Colour gainColor = (gainDb > 0.05f) ? boostCol
+                                      : (gainDb < -0.05f) ? cutCol
+                                                          : neutral;
+
         if (compact) {
             // Suffixes removed in compact mode per spec.
-            drawRow(0, "F",    freqStr);
-            drawRow(1, "G",    gainStr);
-            drawRow(2, "Q",    qStr);
+            drawRow(0, "F", freqStr, neutral);
+            drawRow(1, "G", gainStr, gainColor);
+            drawRow(2, "Q", qStr,    neutral);
         } else {
-            drawRow(0, "FREQ", freqStr + " Hz");
-            drawRow(1, "GAIN", gainStr + " dB");
-            drawRow(2, "Q",    qStr);
+            drawRow(0, "FREQ", freqStr + " Hz", neutral);
+            drawRow(1, "GAIN", gainStr + " dB", gainColor);
+            drawRow(2, "Q",    qStr,            neutral);
             if (expanded) {
                 // 1-line tooltip subtitle using parameter metadata (v2 expanded mode).
                 auto* param = processor.getAPVTS().getParameter("eq" + juce::String(index) + "Type");

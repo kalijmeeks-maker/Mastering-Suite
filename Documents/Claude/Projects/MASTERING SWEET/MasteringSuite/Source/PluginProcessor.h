@@ -41,6 +41,13 @@ public:
     MasteringCompressor& getCompressor() { return compressor; }
     MasteringImager& getImager() { return imager; }
 
+    // Built-in factory presets (Default / Bright / Warm / Punchy / Wide).
+    // loadPreset writes raw parameter values via setValueNotifyingHost so the
+    // UI and DSP both pick them up.
+    static juce::StringArray getPresetNames();
+    void loadPreset(int index);
+    int getCurrentPreset() const { return currentPreset; }
+
     float getCPUUsage() { return 0.012f; } // Placeholder
 
     float getInputPeak() const { return inputPeak.load(); }
@@ -51,10 +58,10 @@ public:
     float getChannelLevelL() const { return channelLevelL.load(); }
     float getChannelLevelR() const { return channelLevelR.load(); }
 
-    // Goniometer data
+    // Goniometer data — lock-free circular buffer; reader sees a (possibly mid-write)
+    // snapshot which is fine for a visual scatter plot.
     static constexpr int goniometerSize = 1024;
     void getGoniometerSamples(float* left, float* right) {
-        const juce::ScopedLock sl(gonioLock);
         std::copy(gonioBufferL.begin(), gonioBufferL.end(), left);
         std::copy(gonioBufferR.begin(), gonioBufferR.end(), right);
     }
@@ -83,10 +90,9 @@ private:
     std::atomic<float> channelLevelL { -100.0f };  // dBFS, post-DSP, slow-decay
     std::atomic<float> channelLevelR { -100.0f };
 
-    // Goniometer DSP
+    // Goniometer DSP — atomic write index, no lock needed (single producer, single consumer).
     std::array<float, goniometerSize> gonioBufferL, gonioBufferR;
-    int gonioIndex = 0;
-    juce::CriticalSection gonioLock;
+    std::atomic<int> gonioIndex { 0 };
 
     void pushSampleIntoFifo(float sample);
     void pushGonioSamples(float l, float r);
@@ -97,6 +103,7 @@ private:
     // Professional state management
     juce::UndoManager undoManager;
     juce::AudioProcessorValueTreeState apvts;
+    int currentPreset = 0;
 
     // DSP Modules
     EbuR128Meter meter;

@@ -12,21 +12,39 @@ HeaderBar::HeaderBar(MasteringSuiteProcessor& proc) : processor(proc) {
     abToggle.setSelectedIndex(0);
     addAndMakeVisible(abToggle);
 
-    // Preset Button — neutral pill
-    presetButton.setButtonText("PRESET: DEFAULT");
+    // Preset Button — neutral pill, opens a PopupMenu on click.
+    presetButton.setButtonText("PRESET: " + MasteringSuiteProcessor::getPresetNames()[processor.getCurrentPreset()]);
     addAndMakeVisible(presetButton);
+    presetButton.onClick = [this] {
+        juce::PopupMenu menu;
+        auto names = MasteringSuiteProcessor::getPresetNames();
+        int active = processor.getCurrentPreset();
+        for (int i = 0; i < names.size(); ++i) {
+            menu.addItem(i + 1, names[i], true, i == active);
+        }
+        menu.showMenuAsync(juce::PopupMenu::Options().withTargetComponent(&presetButton),
+            [this, names](int result) {
+                if (result == 0) return;
+                int idx = result - 1;
+                processor.loadPreset(idx);
+                presetButton.setButtonText("PRESET: " + names[idx]);
+                presetButton.setToggleState(false, juce::dontSendNotification);
+            });
+    };
 
-    // Bypass Button — amber outlined border when active
+    // Bypass Button — amber outlined border + amber LED dot when active
     bypassButton.setButtonText("BYPASS");
     bypassButton.setVariant(PillButton::Variant::Outlined);
     bypassButton.setAccentColor(juce::Colour(0xFFFF9500));  // Amber
+    bypassButton.setShowLed(true);
     addAndMakeVisible(bypassButton);
     bypassAttachment = std::make_unique<juce::AudioProcessorValueTreeState::ButtonAttachment>(
         processor.getAPVTS(), "bypass", bypassButton);
 
-    // Oversample Button — cyan outlined border + text when ON (i.e., not 1x)
+    // Oversample Button — cyan outlined border + LED dot when ON (i.e., not 1x)
     oversampleButton.setVariant(PillButton::Variant::Outlined);
     oversampleButton.setAccentColor(juce::Colour(0xFF6CD6FF));  // Cyan
+    oversampleButton.setShowLed(true);
     addAndMakeVisible(oversampleButton);
 
     auto refreshOversampleLabel = [this] {

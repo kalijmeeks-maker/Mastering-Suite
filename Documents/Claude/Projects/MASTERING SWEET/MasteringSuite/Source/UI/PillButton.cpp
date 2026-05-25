@@ -30,9 +30,24 @@ void PillButton::paint(juce::Graphics& g)
         textColor = juce::Colour(mst::theme::textMid);
     }
 
+    // Optional LED dot at the left edge. Bright accent when toggled, dim otherwise.
+    int textLeftPad = 0;
+    if (showLed) {
+        const float dotR = 6.0f;
+        const float dotX = bounds.getX() + 10.0f;
+        const float dotY = bounds.getCentreY() - dotR * 0.5f;
+        g.setColour(getToggleState() ? accentColor : juce::Colour(0xFF2A2A3A));
+        g.fillEllipse(dotX, dotY, dotR, dotR);
+        textLeftPad = (int)(10.0f + dotR + 4.0f);
+    }
+
     g.setColour(textColor);
     g.setFont(juce::Font(10.0f).boldened());
-    g.drawFittedText(getButtonText(), bounds.toNearestInt(), juce::Justification::centred, 1);
+    auto textArea = bounds.toNearestInt();
+    if (textLeftPad > 0)
+        textArea = textArea.withTrimmedLeft(textLeftPad).withTrimmedRight(8);
+    g.drawFittedText(getButtonText(), textArea,
+                     showLed ? juce::Justification::centredLeft : juce::Justification::centred, 1);
 }
 
 void PillButton::setSegmentGroup(bool isFirst, bool isLast)

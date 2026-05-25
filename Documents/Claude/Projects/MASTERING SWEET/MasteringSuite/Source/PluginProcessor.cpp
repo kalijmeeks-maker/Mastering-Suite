@@ -192,13 +192,10 @@ void MasteringSuiteProcessor::processBlock (juce::AudioBuffer<float>& buffer, ju
 }
 
 void MasteringSuiteProcessor::pushGonioSamples(float l, float r) {
-    if (gonioIndex == goniometerSize) {
-        const juce::ScopedLock sl(gonioLock);
-        gonioIndex = 0;
-    }
-    gonioBufferL[gonioIndex] = l;
-    gonioBufferR[gonioIndex] = r;
-    gonioIndex++;
+    int idx = gonioIndex.load(std::memory_order_relaxed);
+    gonioBufferL[idx] = l;
+    gonioBufferR[idx] = r;
+    gonioIndex.store((idx + 1) % goniometerSize, std::memory_order_relaxed);
 }
 
 void MasteringSuiteProcessor::pushSampleIntoFifo(float sample) {
@@ -248,6 +245,86 @@ void MasteringSuiteProcessor::setStateInformation(const void* data, int sizeInBy
 
 juce::AudioProcessorEditor* MasteringSuiteProcessor::createEditor() {
     return new PluginEditor (*this);
+}
+
+// ────────────────────────── Factory presets ──────────────────────────
+// Five hand-crafted starting points. Each preset writes a handful of
+// parameters via setValueNotifyingHost, then loadPreset stores the index
+// so the HeaderBar can show the active name.
+
+juce::StringArray MasteringSuiteProcessor::getPresetNames() {
+    return { "DEFAULT", "BRIGHT", "WARM", "PUNCHY", "WIDE" };
+}
+
+namespace {
+    void setF(juce::AudioProcessorValueTreeState& apvts, const juce::String& id, float v) {
+        if (auto* p = apvts.getParameter(id))
+            p->setValueNotifyingHost(p->getNormalisableRange().convertTo0to1(v));
+    }
+    void setI(juce::AudioProcessorValueTreeState& apvts, const juce::String& id, int v) {
+        setF(apvts, id, (float)v);
+    }
+}
+
+void MasteringSuiteProcessor::loadPreset(int index) {
+    currentPreset = juce::jlimit(0, (int)getPresetNames().size() - 1, index);
+
+    // Reset EQ bands to default first (HP/LowShelf/Peak/Peak/HighShelf/LP).
+    const int defaultTypes[6] = { 2, 4, 1, 1, 5, 3 };
+    const float defaultFreqs[6] = { 30, 100, 500, 2500, 8000, 18000 };
+    for (int i = 0; i < 6; ++i) {
+        juce::String pre = "eq" + juce::String(i);
+        setI(apvts, pre + "Type", defaultTypes[i]);
+        setF(apvts, pre + "Freq", defaultFreqs[i]);
+        setF(apvts, pre + "Gain", 0.0f);
+        setF(apvts, pre + "Q",    0.707f);
+    }
+    // Dynamics defaults
+    setI(apvts, "dynMode",      0);
+    setF(apvts, "dynThreshold", -18.0f);
+    setF(apvts, "dynRatio",     2.0f);
+    setF(apvts, "dynKnee",      6.0f);
+    setF(apvts, "dynAttack",    14.0f);
+    setF(apvts, "dynRelease",   120.0f);
+    setF(apvts, "dynMakeup",    0.0f);
+    setF(apvts, "dynMix",       100.0f);
+    // Imager / Limiter defaults
+    setF(apvts, "imgWidth",     1.0f);
+    setF(apvts, "imgPan",       0.0f);
+    setF(apvts, "limThreshold", -6.0f);
+    setF(apvts, "limCeiling",   -0.3f);
+    setF(apvts, "limRelease",   120.0f);
+    setF(apvts, "limMakeup",    0.0f);
+
+    switch (currentPreset) {
+        case 1: // BRIGHT — gentle high-shelf lift, a touch of presence boost, modest limiter.
+            setF(apvts, "eq3Gain",    1.5f);  setF(apvts, "eq3Freq", 3500.0f); setF(apvts, "eq3Q", 1.0f);
+            setF(apvts, "eq4Gain",    2.5f);  setF(apvts, "eq4Freq", 9000.0f); setF(apvts, "eq4Q", 0.7f);
+            setF(apvts, "limThreshold", -8.0f);
+            break;
+        case 2: // WARM — low-shelf push, slight 1-2kHz dip for body, gentler limiting.
+            setF(apvts, "eq1Gain",    2.0f);  setF(apvts, "eq1Freq", 120.0f);  setF(apvts, "eq1Q", 0.8f);
+            setF(apvts, "eq3Gain",   -1.5f);  setF(apvts, "eq3Freq", 2000.0f); setF(apvts, "eq3Q", 1.2f);
+            setF(apvts, "eq4Gain",   -1.0f);  setF(apvts, "eq4Freq", 12000.0f);
+            setF(apvts, "limRelease", 180.0f);
+            break;
+        case 3: // PUNCHY — slow-attack compression for transient bite, slight low-mid scoop, hot limiter.
+            setF(apvts, "dynThreshold", -14.0f);
+            setF(apvts, "dynRatio",     3.0f);
+            setF(apvts, "dynAttack",    28.0f);
+            setF(apvts, "dynRelease",   80.0f);
+            setF(apvts, "dynMakeup",    2.5f);
+            setF(apvts, "eq2Gain",     -1.0f); setF(apvts, "eq2Freq", 350.0f); setF(apvts, "eq2Q", 1.2f);
+            setF(apvts, "limThreshold", -10.0f);
+            setF(apvts, "limMakeup",    1.5f);
+            break;
+        case 4: // WIDE — stereo width bump, gentle high lift, otherwise neutral.
+            setF(apvts, "imgWidth",   1.45f);
+            setF(apvts, "eq4Gain",    1.0f);  setF(apvts, "eq4Freq", 10000.0f);
+            break;
+        default: // DEFAULT — leave at neutral.
+            break;
+    }
 }
 
 juce::AudioProcessor* JUCE_CALLTYPE createPluginFilter() {
