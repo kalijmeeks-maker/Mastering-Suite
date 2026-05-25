@@ -32,5 +32,21 @@ private:
     juce::Rectangle<int> modeArea;
     juce::Rectangle<int> meterArea;
 
+    // GR meter motion state (v1.0.2 §2 — Design polish direction).
+    //   Pulse: single-shot rising-edge fire when GR crosses 3 dB instant,
+    //          100 ms debounce, 240 ms ease-out, amber→red→amber, scaleY 1.0→1.025.
+    //   Throb: continuous after GR > 3 dB sustained 500 ms,
+    //          1.2 s sin cycle, +60% glow intensity, 250 ms hysteresis on release.
+    //   Throb wins; pulses are suppressed while throbbing.
+    void tickGrAnimation();
+    float  prevGr            = 0.0f;
+    bool   isPulsing         = false;
+    bool   isThrobbing       = false;
+    double pulseStartMs      = 0.0;
+    double lastPulseMs       = 0.0;
+    double sustainStartMs    = 0.0;  // when did GR first cross threshold this run
+    double sustainReleaseMs  = 0.0;  // when did GR last drop below threshold (for hysteresis)
+    double throbRefMs        = 0.0;  // throb sin phase reference
+
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(LimiterPanel)
 };
