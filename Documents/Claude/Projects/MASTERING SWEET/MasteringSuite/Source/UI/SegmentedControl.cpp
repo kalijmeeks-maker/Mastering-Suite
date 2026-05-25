@@ -27,11 +27,12 @@ void SegmentedControl::addButton(const juce::String& label)
     auto btn = std::make_unique<PillButton>();
     btn->setButtonText(label);
     btn->setRadioGroupId(12345);
+    btn->setAccentColor(buttonAccent);
+    btn->setVariant(buttonVariant);
     addAndMakeVisible(*btn);
 
     btn->onClick = [this, idx = static_cast<int>(buttons.size())] {
         setSelectedIndex(idx);
-        if (onSelectionChanged) onSelectionChanged(idx);
     };
 
     buttons.push_back(std::move(btn));
@@ -39,23 +40,44 @@ void SegmentedControl::addButton(const juce::String& label)
 
 void SegmentedControl::setSelectedIndex(int index)
 {
-    if (index >= 0 && index < static_cast<int>(buttons.size())) {
-        selectedIndex = index;
-        buttons[index]->setToggleState(true, juce::NotificationType::sendNotification);
+    index = juce::jlimit(0, juce::jmax(0, (int)buttons.size() - 1), index);
+    if (index == selectedIndex) return;  // breaks param<->UI feedback loop
+
+    selectedIndex = index;
+    for (int i = 0; i < (int)buttons.size(); ++i) {
+        buttons[i]->setToggleState(i == index, juce::dontSendNotification);
     }
+    if (onSelectionChanged) onSelectionChanged(index);
+    repaint();
 }
 
 void SegmentedControl::connectParameter(juce::AudioProcessorValueTreeState& apvts, const juce::String& paramID)
 {
     if (buttons.empty()) return;
 
-    auto param = dynamic_cast<juce::AudioParameterChoice*>(apvts.getParameter(paramID));
+    auto* param = dynamic_cast<juce::AudioParameterChoice*>(apvts.getParameter(paramID));
     if (!param) return;
 
     setSelectedIndex(param->getIndex());
 
-    buttons[selectedIndex]->setToggleState(true, juce::NotificationType::dontSendNotification);
-    buttons[selectedIndex]->onClick = [this, &apvts, paramID] {
-        apvts.getParameter(paramID)->setValueNotifyingHost(selectedIndex / 100.0f);
+    onSelectionChanged = [param](int idx) {
+        param->setValueNotifyingHost(
+            param->getNormalisableRange().convertTo0to1((float)idx));
     };
+
+    paramAttachment = std::make_unique<juce::ParameterAttachment>(
+        *param,
+        [this](float newValue) { setSelectedIndex((int)newValue); });
+}
+
+void SegmentedControl::setAccentColor(juce::Colour c)
+{
+    buttonAccent = c;
+    for (auto& b : buttons) b->setAccentColor(c);
+}
+
+void SegmentedControl::setVariant(PillButton::Variant v)
+{
+    buttonVariant = v;
+    for (auto& b : buttons) b->setVariant(v);
 }

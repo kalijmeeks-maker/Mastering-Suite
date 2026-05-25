@@ -155,6 +155,7 @@ float MasteringEQ::getFrequencyResponse(float hz) {
 
     double w = 2.0 * pi * hz / sr;
     complex H(1.0, 0.0);
+    complex z_inv = std::polar(1.0, -w);
 
     for (int band = 0; band < NUM_BANDS; ++band) {
         if (bandTypes[band] == FilterType::Bypass) continue;
@@ -162,9 +163,8 @@ float MasteringEQ::getFrequencyResponse(float hz) {
         Biquad dummy;
         computeBiquadCoefficients(bandTypes[band], bandGains[band], bandFreqs[band], bandQs[band], dummy);
 
-        complex z = complex(std::cos(w), std::sin(w));
-        complex num = complex(dummy.b0) + complex(dummy.b1) * z + complex(dummy.b2) * z * z;
-        complex denom = complex(1.0) + complex(dummy.a1) * z + complex(dummy.a2) * z * z;
+        complex num = complex(dummy.b0) + complex(dummy.b1) * z_inv + complex(dummy.b2) * z_inv * z_inv;
+        complex denom = complex(1.0) + complex(dummy.a1) * z_inv + complex(dummy.a2) * z_inv * z_inv;
         H *= num / denom;
     }
 

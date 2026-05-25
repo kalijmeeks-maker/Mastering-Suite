@@ -2,6 +2,8 @@
 #include <JuceHeader.h>
 #include "Theme.h"
 #include "NeonLookAndFeel.h"
+#include "EqCurveDisplay.h"
+#include "EqBandCell.h"
 
 class MasteringSuiteProcessor;
 
@@ -12,13 +14,15 @@ public:
 
     void paint(juce::Graphics& g) override;
     void resized() override;
+    void refreshSpectrum();
 
 private:
     MasteringSuiteProcessor& processor;
     NeonLookAndFeel& lookAndFeel;
 
-    std::unique_ptr<juce::Slider> gainKnob, freqKnob, qKnob;
-    std::unique_ptr<juce::AudioProcessorValueTreeState::SliderAttachment> gainAttach, freqAttach, qAttach;
+    std::unique_ptr<EqCurveDisplay> curveDisplay;
+    std::vector<std::unique_ptr<EqBandCell>> bandCells;
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(EqPanel)
 };
+

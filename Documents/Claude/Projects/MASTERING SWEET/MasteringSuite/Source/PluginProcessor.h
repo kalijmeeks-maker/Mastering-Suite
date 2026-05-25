@@ -4,6 +4,7 @@
 #include "Processing/MasteringEQ.h"
 #include "Processing/MasteringLimiter.h"
 #include "Processing/MasteringCompressor.h"
+#include "Processing/MasteringImager.h"
 
 class MasteringSuiteProcessor : public juce::AudioProcessor {
 public:
@@ -38,8 +39,58 @@ public:
     MasteringEQ& getEQ() { return eq; }
     MasteringLimiter& getLimiter() { return limiter; }
     MasteringCompressor& getCompressor() { return compressor; }
+    MasteringImager& getImager() { return imager; }
+
+    float getCPUUsage() { return 0.012f; } // Placeholder
+
+    float getInputPeak() const { return inputPeak.load(); }
+    float getOutputPeak() const { return outputPeak.load(); }
+    float getCorrelation() const { return correlation.load(); }
+    bool getTruePeakActive() const { return truePeakActive.load(); }
+    // Per-channel post-DSP level for the dual L+R meter (dBFS, decaying).
+    float getChannelLevelL() const { return channelLevelL.load(); }
+    float getChannelLevelR() const { return channelLevelR.load(); }
+
+    // Goniometer data
+    static constexpr int goniometerSize = 1024;
+    void getGoniometerSamples(float* left, float* right) {
+        const juce::ScopedLock sl(gonioLock);
+        std::copy(gonioBufferL.begin(), gonioBufferL.end(), left);
+        std::copy(gonioBufferR.begin(), gonioBufferR.end(), right);
+    }
+
+    // Spectrum Analyzer data access
+    static constexpr int fftSize = 2048;
+    void getNextFFTBlock(float* dest) {
+        const juce::ScopedLock sl(fftLock);
+        std::copy(scopeData.begin(), scopeData.end(), dest);
+    }
 
 private:
+    // Spectrum Analyzer DSP
+    juce::dsp::FFT fft { 11 }; // 2^11 = 2048
+    juce::dsp::WindowingFunction<float> window { fftSize + 1, juce::dsp::WindowingFunction<float>::hann };
+    std::array<float, fftSize> fifo;
+    std::array<float, fftSize * 2> fftData;
+    std::array<float, fftSize / 2> scopeData;
+    int fifoIndex = 0;
+    juce::CriticalSection fftLock;
+
+    std::atomic<float> inputPeak { -100.0f };
+    std::atomic<float> outputPeak { -100.0f };
+    std::atomic<float> correlation { 1.0f };       // [-1..+1] L/R correlation, smoothed
+    std::atomic<bool>  truePeakActive { false };   // limiter currently catching peaks
+    std::atomic<float> channelLevelL { -100.0f };  // dBFS, post-DSP, slow-decay
+    std::atomic<float> channelLevelR { -100.0f };
+
+    // Goniometer DSP
+    std::array<float, goniometerSize> gonioBufferL, gonioBufferR;
+    int gonioIndex = 0;
+    juce::CriticalSection gonioLock;
+
+    void pushSampleIntoFifo(float sample);
+    void pushGonioSamples(float l, float r);
+
     // Create parameter layout for APVTS
     juce::AudioProcessorValueTreeState::ParameterLayout createParameterLayout();
 
@@ -51,6 +102,7 @@ private:
     EbuR128Meter meter;
     MasteringEQ eq;
     MasteringCompressor compressor;
+    MasteringImager imager;
     MasteringLimiter limiter;
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (MasteringSuiteProcessor)

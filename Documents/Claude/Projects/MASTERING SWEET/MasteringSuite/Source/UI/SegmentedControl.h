@@ -15,11 +15,17 @@ public:
     int getSelectedIndex() const { return selectedIndex; }
 
     void connectParameter(juce::AudioProcessorValueTreeState& apvts, const juce::String& paramID);
+    void setAccentColor(juce::Colour c);
+    void setVariant(PillButton::Variant v);
+
     std::function<void(int)> onSelectionChanged;
 
 private:
     std::vector<std::unique_ptr<PillButton>> buttons;
-    int selectedIndex = 0;
+    int selectedIndex = -1;
+    std::unique_ptr<juce::ParameterAttachment> paramAttachment;
+    PillButton::Variant buttonVariant = PillButton::Variant::Filled;
+    juce::Colour buttonAccent = juce::Colour(0xFFF3F3FA);
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(SegmentedControl)
 };

@@ -2,6 +2,8 @@
 #include <JuceHeader.h>
 #include "Theme.h"
 
+#include "SegmentedControl.h"
+
 class MasteringSuiteProcessor;
 
 class FooterBar : public juce::Component {
@@ -15,6 +17,7 @@ public:
 
 private:
     MasteringSuiteProcessor& processor;
+    std::unique_ptr<SegmentedControl> densityToggle;
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(FooterBar)
 };

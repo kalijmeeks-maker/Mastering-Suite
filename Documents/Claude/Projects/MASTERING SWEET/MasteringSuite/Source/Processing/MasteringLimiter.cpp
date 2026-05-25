@@ -10,13 +10,16 @@ MasteringLimiter::~MasteringLimiter() = default;
 void MasteringLimiter::prepare (double sampleRate, int numChannels, int samplesPerBlock) {
     sr = sampleRate;
     this->numChannels = numChannels;
-    releaseCoeff = std::exp (-2.0 * 3.14159265358979323846 * releaseTimeMs / 1000.0 / sr);
+    
+    // Default ballistics
+    attackCoeff = std::exp (-1.0 / (0.1 * 0.001 * sr)); // 0.1ms attack
+    releaseCoeff = std::exp (-1.0 / (releaseTimeMs * 0.001 * sr));
 
     isInitialized = false;
 
-    if (useTruePeak) {
-        // Create 4x oversampler with polyphase IIR filter for true-peak detection
-        oversampler = std::make_unique<juce::dsp::Oversampling<float>>(numChannels, 4, juce::dsp::Oversampling<float>::filterHalfBandPolyphaseIIR);
+    if (useTruePeak && numChannels > 0) {
+        // Create 4x oversampler (factor=2 means 2^2 = 4) with polyphase IIR filter for true-peak detection
+        oversampler = std::make_unique<juce::dsp::Oversampling<float>>(numChannels, 2, juce::dsp::Oversampling<float>::filterHalfBandPolyphaseIIR);
 
         // Initialize with actual block size plus safety margin
         int initBlockSize = juce::jmax(512, samplesPerBlock * 4);
@@ -62,22 +65,30 @@ void MasteringLimiter::processSampleWithTruePeak (juce::AudioBuffer<float>& buff
     }
 
     if (peakDb > thresholdDbfs) {
-        currentGainReductionDb = -(peakDb - thresholdDbfs);
+        float reduction = thresholdDbfs - peakDb;
+        if (reduction < currentGainReductionDb)
+            currentGainReductionDb = attackCoeff * currentGainReductionDb + (1.0f - attackCoeff) * reduction;
+        else
+            currentGainReductionDb = releaseCoeff * currentGainReductionDb + (1.0f - releaseCoeff) * reduction;
     } else {
-        currentGainReductionDb = 0.0f;
+        currentGainReductionDb = releaseCoeff * currentGainReductionDb;
     }
 
     gainReductionDb.store (currentGainReductionDb);
+    
+    // Apply gain + honor ceiling
     float gain = std::pow (10.0f, (currentGainReductionDb + makeupGainDb) / 20.0f);
-
+    float ceilGain = std::pow (10.0f, ceilingDbfs / 20.0f);
+    
     for (int ch = 0; ch < numCh; ++ch) {
         auto* ptr = const_cast<float*>(oversampledBlock.getChannelPointer(ch));
-        for (int i = 0; i < numSamples; ++i)
+        for (int i = 0; i < numSamples; ++i) {
             ptr[i] *= gain;
+            if (std::abs(ptr[i]) > ceilGain) ptr[i] = (ptr[i] > 0) ? ceilGain : -ceilGain;
+        }
     }
 
     oversampler->processSamplesDown (block);
-    currentGainReductionDb = releaseCoeff * currentGainReductionDb;
 }
 
 void MasteringLimiter::processSampleSimple (juce::AudioBuffer<float>& buffer) {
@@ -97,19 +108,26 @@ void MasteringLimiter::processSampleSimple (juce::AudioBuffer<float>& buffer) {
     }
 
     if (peakDb > thresholdDbfs) {
-        currentGainReductionDb = -(peakDb - thresholdDbfs);
+        float reduction = thresholdDbfs - peakDb;
+        if (reduction < currentGainReductionDb)
+            currentGainReductionDb = attackCoeff * currentGainReductionDb + (1.0f - attackCoeff) * reduction;
+        else
+            currentGainReductionDb = releaseCoeff * currentGainReductionDb + (1.0f - releaseCoeff) * reduction;
     } else {
-        currentGainReductionDb = 0.0f;
+        currentGainReductionDb = releaseCoeff * currentGainReductionDb;
     }
 
     gainReductionDb.store (currentGainReductionDb);
     float gain = std::pow (10.0f, (currentGainReductionDb + makeupGainDb) / 20.0f);
+    float ceilGain = std::pow (10.0f, ceilingDbfs / 20.0f);
 
     for (int ch = 0; ch < numCh; ++ch) {
-        buffer.applyGain (ch, 0, numSamples, gain);
+        float* ptr = buffer.getWritePointer(ch);
+        for (int i = 0; i < numSamples; ++i) {
+            ptr[i] *= gain;
+            if (std::abs(ptr[i]) > ceilGain) ptr[i] = (ptr[i] > 0) ? ceilGain : -ceilGain;
+        }
     }
-
-    currentGainReductionDb = releaseCoeff * currentGainReductionDb;
 }
 
 void MasteringLimiter::setThreshold (float dbfs) {
@@ -118,7 +136,11 @@ void MasteringLimiter::setThreshold (float dbfs) {
 
 void MasteringLimiter::setRelease (float timeMs) {
     releaseTimeMs = timeMs;
-    releaseCoeff = std::exp (-2.0 * 3.14159265358979323846 * releaseTimeMs / 1000.0 / sr);
+    if (sr > 0) releaseCoeff = std::exp (-1.0 / (releaseTimeMs * 0.001 * sr));
+}
+
+void MasteringLimiter::setCeiling (float dbfs) {
+    ceilingDbfs = dbfs;
 }
 
 void MasteringLimiter::setMakeupGain (float dbfs) {

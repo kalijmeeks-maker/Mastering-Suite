@@ -18,10 +18,13 @@ private:
     MasteringSuiteProcessor& processor;
     NeonLookAndFeel& lookAndFeel;
 
-    std::unique_ptr<juce::Slider> threshKnob, releaseKnob, makeupKnob;
-    std::unique_ptr<juce::AudioProcessorValueTreeState::SliderAttachment> threshAttach, releaseAttach, makeupAttach;
+    std::unique_ptr<juce::Slider> threshK, releaseK, makeupK, ceilingK;
+    std::unique_ptr<juce::ComboBox> styleC;
+    std::unique_ptr<juce::ToggleButton> truePeakB;
 
-    float currentGainReduction = 0.0f;
+    std::unique_ptr<juce::AudioProcessorValueTreeState::SliderAttachment> threshA, releaseA, makeupA, ceilingA;
+    std::unique_ptr<juce::AudioProcessorValueTreeState::ComboBoxAttachment> styleA;
+    std::unique_ptr<juce::AudioProcessorValueTreeState::ButtonAttachment> truePeakA;
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(LimiterPanel)
 };

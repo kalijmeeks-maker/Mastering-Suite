@@ -12,46 +12,31 @@ void NeonLookAndFeel::drawRotarySlider(juce::Graphics& g, int x, int y, int widt
     auto centre = bounds.getCentre();
     auto radius = juce::jmin(bounds.getWidth(), bounds.getHeight()) * 0.4f;
 
-    // Get accent color from slider or use cyan default
+    // Get accent color from slider
     juce::Colour accent = slider.findColour(juce::Slider::rotarySliderFillColourId);
-    if (accent == juce::Colours::transparentBlack) {
-        accent = juce::Colour(mst::theme::cEqGain);
-    }
+    if (accent == juce::Colours::transparentBlack) accent = juce::Colour(mst::theme::cEqGain);
 
-    // Hover detection for stronger glow
-    const bool isHovered = slider.isMouseOverOrDragging();
-    const float haloAlpha = isHovered ? 0.85f : 0.55f;
-    const float haloMul = isHovered ? 2.2f : 1.6f;
+    // Get touch state/glow alpha
+    float glowAlpha = (float)slider.getProperties().getWithDefault("glowAlpha", 0.0f);
+    bool isActive = (glowAlpha > 0.01f);
 
-    // Outer halo (primary glow, v2 stronger)
-    const float haloR = radius * haloMul;
-    juce::ColourGradient halo(
-        accent.withAlpha(haloAlpha), centre.x, centre.y,
-        accent.withAlpha(0.0f), centre.x + haloR, centre.y,
-        true);
-    halo.addColour(0.45, accent.withAlpha(0.18f));
-    g.setGradientFill(halo);
-    g.fillEllipse(bounds.expanded(16.0f));
-
-    // Knob body (dark circle with subtle radial gradient)
+    // Knob body — radial gradient (v2: circle at 35% 30%, #2A2A3A → #1A1A24 55% → #0A0A12 100%)
     const float bodyR = radius - 6.0f;
     juce::ColourGradient body(
-        juce::Colour(0xFF1A1A23), centre.x, centre.y - bodyR * 0.3f,
-        juce::Colour(0xFF0D0D14), centre.x, centre.y + bodyR * 0.3f,
-        false);
+        juce::Colour(0xFF2A2A3A), centre.x - bodyR * 0.3f, centre.y - bodyR * 0.4f,
+        juce::Colour(0xFF0A0A12), centre.x + bodyR, centre.y + bodyR,
+        true);
+    body.addColour(0.55f, juce::Colour(0xFF1A1A24));
     g.setGradientFill(body);
     g.fillEllipse(centre.x - bodyR, centre.y - bodyR, bodyR * 2.0f, bodyR * 2.0f);
 
-    // Inner glow (subtle top-to-bottom bloom)
-    juce::ColourGradient innerGlow(
-        accent.withAlpha(0.18f), centre.x, centre.y + radius * 0.2f,
-        accent.withAlpha(0.0f), centre.x, centre.y - radius * 0.5f,
-        false);
-    g.setGradientFill(innerGlow);
-    g.fillEllipse(centre.x - bodyR + 6, centre.y - bodyR + 6,
-                  (bodyR - 6) * 2, (bodyR - 6) * 2);
+    // 1px rim and faint inner ring (v2: 1px #2C2C3C border + 1px rgba(255,255,255,0.04) inner)
+    g.setColour(juce::Colour(0xFF2C2C3C));
+    g.drawEllipse(centre.x - bodyR, centre.y - bodyR, bodyR * 2.0f, bodyR * 2.0f, 1.0f);
+    g.setColour(juce::Colours::white.withAlpha(0.04f));
+    g.drawEllipse(centre.x - bodyR + 4, centre.y - bodyR + 4, (bodyR - 4) * 2.0f, (bodyR - 4) * 2.0f, 1.0f);
 
-    // Value arc (270° from 45° to 315°)
+    // Value arc (lit arc)
     const float arcRadius = radius - 2.0f;
     const float arcWidth = 3.0f;
     const float startAngle = juce::degreesToRadians(45.0f);
@@ -59,19 +44,36 @@ void NeonLookAndFeel::drawRotarySlider(juce::Graphics& g, int x, int y, int widt
     const float endAngle = startAngle + (sweepLength * sliderPos);
 
     juce::Path arc;
-    arc.addCentredArc(centre.x, centre.y, arcRadius, arcRadius, 0.0f,
-                      startAngle, endAngle, true);
+    arc.addCentredArc(centre.x, centre.y, arcRadius, arcRadius, 0.0f, startAngle, endAngle, true);
 
-    g.setColour(accent.withAlpha(0.9f));
+    // Lit arc: 40% at rest, 100% on touch
+    float arcAlpha = isActive ? 1.0f : 0.4f;
+    g.setColour(accent.withAlpha(arcAlpha));
     g.strokePath(arc, juce::PathStrokeType(arcWidth, juce::PathStrokeType::curved, juce::PathStrokeType::rounded));
 
-    // Bezel stroke
-    g.setColour(accent.withAlpha(0.4f));
-    g.drawEllipse(centre.x - bodyR, centre.y - bodyR, bodyR * 2.0f, bodyR * 2.0f, 0.8f);
+    // Glow and halo only if active
+    if (isActive) {
+        // Outer halo
+        const float haloR = radius * 1.6f;
+        juce::ColourGradient halo(
+            accent.withAlpha(glowAlpha * 0.6f), centre.x, centre.y,
+            accent.withAlpha(0.0f), centre.x + haloR, centre.y,
+            true);
+        g.setGradientFill(halo);
+        g.fillEllipse(bounds.expanded(16.0f));
 
-    // Center indicator dot
-    g.setColour(accent.withAlpha(0.7f));
-    g.fillEllipse(centre.x - 2.0f, centre.y - 2.0f, 4.0f, 4.0f);
+        // Inner glow
+        juce::ColourGradient innerGlow(
+            accent.withAlpha(glowAlpha * 0.3f), centre.x, centre.y + radius * 0.2f,
+            accent.withAlpha(0.0f), centre.x, centre.y - radius * 0.5f,
+            false);
+        g.setGradientFill(innerGlow);
+        g.fillEllipse(centre.x - bodyR + 6, centre.y - bodyR + 6, (bodyR - 6) * 2, (bodyR - 6) * 2);
+
+        // Center dot
+        g.setColour(accent.withAlpha(glowAlpha));
+        g.fillEllipse(centre.x - 2.0f, centre.y - 2.0f, 4.0f, 4.0f);
+    }
 }
 
 void NeonLookAndFeel::drawButtonBackground(juce::Graphics& g, juce::Button& button,

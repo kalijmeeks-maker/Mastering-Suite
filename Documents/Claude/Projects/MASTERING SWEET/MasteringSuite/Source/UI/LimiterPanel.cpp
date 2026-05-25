@@ -4,109 +4,103 @@
 LimiterPanel::LimiterPanel(MasteringSuiteProcessor& proc, NeonLookAndFeel& laf)
     : processor(proc), lookAndFeel(laf) {
 
-    threshKnob = std::make_unique<juce::Slider>(juce::Slider::RotaryVerticalDrag, juce::Slider::TextBoxBelow);
-    releaseKnob = std::make_unique<juce::Slider>(juce::Slider::RotaryVerticalDrag, juce::Slider::TextBoxBelow);
-    makeupKnob = std::make_unique<juce::Slider>(juce::Slider::RotaryVerticalDrag, juce::Slider::TextBoxBelow);
+    auto createKnob = [&](std::unique_ptr<juce::Slider>& k, std::unique_ptr<juce::AudioProcessorValueTreeState::SliderAttachment>& a, juce::String paramID, juce::Colour color) {
+        k = std::make_unique<juce::Slider>(juce::Slider::RotaryVerticalDrag, juce::Slider::NoTextBox);
+        k->setLookAndFeel(&lookAndFeel);
+        k->setColour(juce::Slider::rotarySliderFillColourId, color);
+        a = std::make_unique<juce::AudioProcessorValueTreeState::SliderAttachment>(processor.getAPVTS(), paramID, *k);
+        if (auto* param = processor.getAPVTS().getParameter(paramID))
+            k->setTooltip(param->getName(64));
+        addAndMakeVisible(*k);
+    };
 
-    // Threshold - Orange
-    threshKnob->setColour(juce::Slider::rotarySliderFillColourId, juce::Colour(mst::theme::cLimThresh));
-    threshKnob->setLookAndFeel(&lookAndFeel);
-    threshKnob->textFromValueFunction = [](double v) { return juce::String(v, 1) + " dB"; };
-    threshAttach = std::make_unique<juce::AudioProcessorValueTreeState::SliderAttachment>(
-        processor.getAPVTS(), "lim_thresh", *threshKnob);
-    addAndMakeVisible(*threshKnob);
+    createKnob(threshK, threshA, "limThreshold", juce::Colour(mst::theme::tabLim));
+    createKnob(releaseK, releaseA, "limRelease", juce::Colour(mst::theme::tabLim));
+    createKnob(ceilingK, ceilingA, "limCeiling", juce::Colour(mst::theme::tabLim));
+    createKnob(makeupK, makeupA, "limMakeup", juce::Colour(mst::theme::tabLim));
 
-    // Release - Violet
-    releaseKnob->setColour(juce::Slider::rotarySliderFillColourId, juce::Colour(mst::theme::cLimRelease));
-    releaseKnob->setLookAndFeel(&lookAndFeel);
-    releaseKnob->textFromValueFunction = [](double v) { return juce::String((int)v) + " ms"; };
-    releaseAttach = std::make_unique<juce::AudioProcessorValueTreeState::SliderAttachment>(
-        processor.getAPVTS(), "lim_release", *releaseKnob);
-    addAndMakeVisible(*releaseKnob);
+    styleC = std::make_unique<juce::ComboBox>();
+    styleC->addItemList(juce::StringArray("Transparent", "Punchy", "Warm"), 1);
+    styleA = std::make_unique<juce::AudioProcessorValueTreeState::ComboBoxAttachment>(processor.getAPVTS(), "limStyle", *styleC);
+    addAndMakeVisible(*styleC);
 
-    // Makeup - Mint
-    makeupKnob->setColour(juce::Slider::rotarySliderFillColourId, juce::Colour(mst::theme::cLimMakeup));
-    makeupKnob->setLookAndFeel(&lookAndFeel);
-    makeupKnob->textFromValueFunction = [](double v) { return juce::String(v, 1) + " dB"; };
-    makeupAttach = std::make_unique<juce::AudioProcessorValueTreeState::SliderAttachment>(
-        processor.getAPVTS(), "lim_makeup", *makeupKnob);
-    addAndMakeVisible(*makeupKnob);
+    truePeakB = std::make_unique<juce::ToggleButton>("TRUE PEAK");
+    truePeakA = std::make_unique<juce::AudioProcessorValueTreeState::ButtonAttachment>(processor.getAPVTS(), "limTruePeak", *truePeakB);
+    addAndMakeVisible(*truePeakB);
 }
 
 void LimiterPanel::paint(juce::Graphics& g) {
     auto bounds = getLocalBounds().toFloat();
 
-    // Background gradient
+    // Background
     juce::ColourGradient bg(
         juce::Colour(mst::theme::panelTop), 0.0f, 0.0f,
         juce::Colour(mst::theme::panelInner), 0.0f, bounds.getHeight(),
         false);
     g.setGradientFill(bg);
     g.fillRoundedRectangle(bounds, 8.0f);
-
-    // Border
     g.setColour(juce::Colour(mst::theme::border).withAlpha(0.3f));
     g.drawRoundedRectangle(bounds, 8.0f, 1.0f);
 
     // Header
     g.setFont(juce::Font(11.0f).boldened());
     g.setColour(juce::Colour(mst::theme::textHigh));
-    g.drawText(juce::String(juce::CharPointer_UTF8(u8"LIMITER · TRUE PEAK")), 14, 8, bounds.getWidth() * 0.6f, 14, juce::Justification::topLeft);
-
-    g.setFont(juce::Font(8.0f));
-    g.setColour(juce::Colour(mst::theme::textLow));
-    g.drawText("CEILING −1.0 dBTP", 14, 20, bounds.getWidth() * 0.6f, 10, juce::Justification::topLeft);
-
-    // Knob labels above
-    g.setFont(juce::Font(10.0f).boldened());
-    g.setColour(juce::Colour(mst::theme::textMid));
-
-    auto labelY = 35;
-    auto colWidth = bounds.getWidth() * 0.33f;
-    g.drawText("THRESHOLD", 10, labelY, colWidth - 4, 12, juce::Justification::centredTop);
-    g.drawText("RELEASE", 10 + colWidth, labelY, colWidth - 4, 12, juce::Justification::centredTop);
-    g.drawText("MAKEUP", 10 + colWidth * 2, labelY, colWidth - 4, 12, juce::Justification::centredTop);
+    g.drawText(juce::String::fromUTF8("LIMITER \u00B7 TRUE PEAK"), 14, 8, (int)bounds.getWidth() - 28, 14, juce::Justification::topLeft);
 
     // GR meter on the right
-    auto meterX = bounds.getWidth() * 0.75f;
-    auto meterW = bounds.getWidth() - meterX - 10.0f;
-    auto meterH = bounds.getHeight() - 50.0f;
-    auto meterY = bounds.getY() + 40.0f;
+    auto meterX = bounds.getWidth() * 0.85f;
+    auto meterW = bounds.getWidth() - meterX - 14.0f;
+    auto meterH = bounds.getHeight() - 60.0f;
+    auto meterY = 40.0f;
 
-    // GR meter background
     g.setColour(juce::Colour(mst::theme::panelInner));
     g.fillRoundedRectangle(meterX, meterY, meterW, meterH, 4.0f);
 
-    // Draw GR segments (0 to 40 dB reduction)
-    const int segmentCount = 12;
+    float currentGainReduction = processor.getLimiter().getCurrentGainReduction();
+    const int segmentCount = 16;
     const float segmentH = (meterH - 4.0f) / segmentCount;
-    const float normalized = juce::jmin(1.0f, currentGainReduction / 40.0f);
+    const float normalized = juce::jmin(1.0f, std::abs(currentGainReduction) / 24.0f);
     const int litSegments = (int)(normalized * segmentCount);
 
-    g.setColour(juce::Colour(mst::theme::cLimThresh).withAlpha(0.8f));
-    for (int i = 0; i < litSegments; ++i) {
-        float y = meterY + meterH - (i + 1) * segmentH;
+    // Draw inactive segments
+    g.setColour(juce::Colour(mst::theme::panelInner).brighter(0.2f));
+    for (int i = 0; i < segmentCount; ++i) {
+        float y = meterY + 2 + i * segmentH;
         g.fillRoundedRectangle(meterX + 2, y, meterW - 4, segmentH - 1.5f, 1.0f);
     }
 
-    // GR label and value
-    g.setFont(juce::Font(9.0f).boldened());
-    g.setColour(juce::Colour(mst::theme::textMid));
-    g.drawText("GR", meterX + 2, (int)(meterY + meterH + 2), (int)meterW - 4, 12, juce::Justification::centredTop);
+    g.setColour(juce::Colour(mst::theme::tabLim).withAlpha(0.8f));
+    for (int i = 0; i < litSegments; ++i) {
+        float y = meterY + 2 + i * segmentH;
+        g.fillRoundedRectangle(meterX + 2, y, meterW - 4, segmentH - 1.5f, 1.0f);
+    }
 
-    g.setFont(juce::Font(8.0f));
-    g.drawText(juce::String(currentGainReduction, 1) + " dB", meterX + 2, (int)(meterY + meterH + 14), (int)meterW - 4, 10, juce::Justification::centredTop);
+    // Knob Labels
+    g.setFont(juce::Font(9.0f));
+    g.setColour(juce::Colour(mst::theme::textMid));
+    auto drawLabel = [&](juce::Component& k, juce::String text) {
+        g.drawText(text, k.getBounds().withY(k.getBottom() - 5).withHeight(15), juce::Justification::centred);
+    };
+
+    drawLabel(*threshK, "THRESH");
+    drawLabel(*ceilingK, "CEILING");
+    drawLabel(*releaseK, "RELEASE");
+    drawLabel(*makeupK, "MAKEUP");
 }
 
 void LimiterPanel::resized() {
     auto bounds = getLocalBounds();
-    auto knobArea = bounds.reduced(10, 40);
-    int knobW = (int)(knobArea.getWidth() * 0.25f);
-    int knobH = knobArea.getHeight() * 0.6f;
+    auto knobArea = bounds.reduced(20, 40);
+    knobArea.removeFromRight(bounds.getWidth() * 0.2f);
 
-    threshKnob->setBounds(10, knobArea.getY(), knobW, knobH);
-    releaseKnob->setBounds(10 + knobW + 5, knobArea.getY(), knobW, knobH);
-    makeupKnob->setBounds(10 + (knobW + 5) * 2, knobArea.getY(), knobW, knobH);
+    int knobW = knobArea.getWidth() / 4;
+    threshK->setBounds(knobArea.removeFromLeft(knobW).reduced(10));
+    ceilingK->setBounds(knobArea.removeFromLeft(knobW).reduced(10));
+    releaseK->setBounds(knobArea.removeFromLeft(knobW).reduced(10));
+    makeupK->setBounds(knobArea.removeFromLeft(knobW).reduced(10));
+
+    styleC->setBounds(20, bounds.getHeight() - 40, 120, 20);
+    truePeakB->setBounds(160, bounds.getHeight() - 40, 100, 20);
 }
 
 void LimiterPanel::refresh() {

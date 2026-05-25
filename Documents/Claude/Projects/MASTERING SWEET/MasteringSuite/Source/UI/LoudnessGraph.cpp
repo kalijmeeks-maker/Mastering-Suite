@@ -21,21 +21,30 @@ void LoudnessGraph::paint(juce::Graphics& g) {
     // Header
     g.setFont(juce::Font(11.0f).boldened());
     g.setColour(juce::Colour(mst::theme::textHigh));
-    g.drawText(juce::String(juce::CharPointer_UTF8(u8"LOUDNESS HISTORY · 30 SEC")), 14, 8, bounds.getWidth() - 28, 14, juce::Justification::topLeft);
+    g.drawText(juce::String::fromUTF8("LOUDNESS HISTORY \u00B7 30 SEC"), 14, 8, (int)bounds.getWidth() - 28, 14, juce::Justification::topLeft);
 
-    g.setFont(juce::Font(8.0f));
-    g.setColour(juce::Colour(mst::theme::textLow));
-    g.drawText("SHORT-TERM LUFS", 14, 20, bounds.getWidth() - 28, 10, juce::Justification::topLeft);
+    // Legend (top-right): SHORT swatch + TARGET-14 swatch
+    {
+        auto legend = juce::Rectangle<float>(bounds.getRight() - 170.0f, 10.0f, 156.0f, 14.0f);
+        g.setColour(juce::Colour(0xFFFF5CD1));
+        g.fillRect(legend.getX(), legend.getCentreY() - 1.0f, 8.0f, 2.0f);
+        g.setColour(juce::Colour(mst::theme::textLow));
+        g.setFont(juce::Font(8.0f));
+        g.drawText("SHORT", legend.getX() + 12.0f, legend.getY(), 50.0f, 14.0f, juce::Justification::centredLeft);
+        g.setColour(juce::Colour(mst::theme::tabLim));
+        g.fillRect(legend.getX() + 70.0f, legend.getCentreY() - 1.0f, 8.0f, 2.0f);
+        g.setColour(juce::Colour(mst::theme::textLow));
+        g.drawText("TARGET -14", legend.getX() + 82.0f, legend.getY(), 75.0f, 14.0f, juce::Justification::centredLeft);
+    }
 
-    // Graph area with gradient bars
-    auto graphArea = bounds.reduced(14, 40);
-    const int barWidth = juce::jmax(1, (int)(graphArea.getWidth() / (float)maxSamples));
+    // Graph area
+    auto graphArea = bounds.reduced(40, 40).withX(35); // Room for labels on left
+    const float barWidth = graphArea.getWidth() / (float)maxSamples;
 
     for (size_t i = 0; i < history.size(); ++i) {
-        float normalized = (history[i] + 23.0f) / 30.0f; // -23 to 7 LUFS
-        normalized = juce::jlimit(0.0f, 1.0f, normalized);
+        float normalized = (history[i] + 36.0f) / 36.0f; // -36 to 0 LUFS
+        normalized = juce::jlimit(0.06f, 1.0f, normalized); // 6% min-height clamp
 
-        // Magenta to violet gradient per bar
         auto barX = graphArea.getX() + (i * barWidth);
         juce::ColourGradient barGrad(
             juce::Colour(0xFFFF00FF), barX, graphArea.getY(),
@@ -44,31 +53,38 @@ void LoudnessGraph::paint(juce::Graphics& g) {
         g.setGradientFill(barGrad);
 
         float barHeight = graphArea.getHeight() * normalized;
-        g.fillRect(barX, graphArea.getBottom() - barHeight, (float)barWidth - 1, barHeight);
+        g.fillRect(barX, graphArea.getBottom() - barHeight, barWidth - 0.5f, barHeight);
     }
 
     // Reference line at -14 LUFS (mint green, dashed)
-    const float refNorm = (-14.0f + 23.0f) / 30.0f;
-    const float refY = graphArea.getBottom() - (graphArea.getHeight() * refNorm);
-    g.setColour(juce::Colour(mst::theme::cLimMakeup).withAlpha(0.6f));
+    const float refY = graphArea.getBottom() - (graphArea.getHeight() * ((-14.0f + 36.0f) / 36.0f));
+    g.setColour(juce::Colour(mst::theme::tabLim).withAlpha(0.4f));
     for (float x = graphArea.getX(); x < graphArea.getRight(); x += 4.0f) {
         g.drawLine(x, refY, x + 2.0f, refY, 1.0f);
     }
 
-    // Y-axis labels (-6 to -26 LUFS)
-    g.setFont(juce::Font(7.0f));
+    // Y-axis labels in a proper column down the left side
+    g.setFont(juce::Font(8.0f));
     g.setColour(juce::Colour(mst::theme::textLow));
-    for (int lufs = -6; lufs >= -26; lufs -= 4) {
-        float yNorm = (-lufs + 23.0f) / 30.0f;
+    for (int lufs : {-6, -10, -14, -18, -22, -26}) {
+        float yNorm = (lufs + 36.0f) / 36.0f;
         float y = graphArea.getBottom() - (graphArea.getHeight() * yNorm);
-        g.drawText(juce::String(lufs), bounds.getX(), (int)(y - 4), 12, 8, juce::Justification::centredRight);
+        g.drawText(juce::String(lufs), 5, (int)(y - 5), 25, 10, juce::Justification::centredRight);
     }
 
-    // X-axis labels (-30s to now)
-    g.setFont(juce::Font(7.0f));
+    // X-axis time labels along the bottom (v2 spec).
+    g.setFont(juce::Font(8.0f));
     g.setColour(juce::Colour(mst::theme::textLow));
-    g.drawText("-30s", bounds.getX() + 14, (int)(graphArea.getBottom() + 2), 30, 10, juce::Justification::topLeft);
-    g.drawText("now", bounds.getRight() - 44, (int)(graphArea.getBottom() + 2), 30, 10, juce::Justification::topRight);
+    const char* xLabels[] = { "-30s", "-24s", "-18s", "-12s", "-6s", "now" };
+    const int nLabels = 6;
+    for (int i = 0; i < nLabels; ++i) {
+        float t = (float)i / (float)(nLabels - 1);
+        float x = graphArea.getX() + t * graphArea.getWidth();
+        auto j = (i == 0) ? juce::Justification::centredLeft
+               : (i == nLabels - 1) ? juce::Justification::centredRight
+               : juce::Justification::centred;
+        g.drawText(xLabels[i], (int)x - 20, (int)graphArea.getBottom() + 3, 40, 10, j);
+    }
 }
 
 void LoudnessGraph::resized() {}

@@ -96,11 +96,10 @@ void MasteringSuiteEditor::timerCallback()
 
     // Update footer status
     auto latencyMs = processor.getTailLengthSeconds() * 1000.0;
-    footerBar->setStatusText(juce::String::formatted("SR %.1fK · 32-BIT FLOAT · LATENCY %.1f MS",
-                                                      processor.getSampleRate() / 1000.0,
-                                                      latencyMs));
-    footerBar->setCpuUsage(0.0f);  // Placeholder for actual CPU measurement
-}
+    footerBar->setStatusText(juce::String::fromUTF8(juce::String::formatted("SR %.1fK \xC2\xB7 32-BIT FLOAT \xC2\xB7 LATENCY %.1f MS",
+                                                       processor.getSampleRate() / 1000.0,
+                                                       latencyMs)));
+    footerBar->setCpuUsage(0.0f);  // Placeholder for actual CPU measurement}
 
 void MasteringSuiteEditor::showModule(int moduleIndex)
 {

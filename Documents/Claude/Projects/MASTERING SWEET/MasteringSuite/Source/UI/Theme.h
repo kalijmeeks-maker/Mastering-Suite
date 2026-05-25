@@ -26,6 +26,12 @@ constexpr juce::uint32 cLimMakeup       = 0xFF00FFCC;  // Mint (Limiter Makeup)
 constexpr juce::uint32 statusGreen      = 0xFF00FF41;  // Status indicator
 constexpr juce::uint32 peakRed          = 0xFFFF3333;  // Peak/clipping indicator
 
+// Tab accent colors (exact from Claude Design)
+constexpr juce::uint32 tabEq            = 0xFF00E5FF;  // Cyan
+constexpr juce::uint32 tabDyn           = 0xFFFF7B3A;  // Orange
+constexpr juce::uint32 tabImg           = 0xFF9B7BFF;  // Violet
+constexpr juce::uint32 tabLim           = 0xFF3AFFB0;  // Mint
+
 // ────────── Layout Constants ──────────
 constexpr int headerHeight              = 56;
 constexpr int footerHeight              = 32;
