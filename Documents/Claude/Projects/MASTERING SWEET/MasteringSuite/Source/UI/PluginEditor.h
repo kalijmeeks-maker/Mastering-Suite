@@ -5,7 +5,8 @@
 #include "NeonLookAndFeel.h"
 #include "HeaderBar.h"
 #include "FooterBar.h"
-#include "LufsPanel.h"
+// LufsPanel is now superseded by the unified LoudnessGraph (v1.0.4) — file
+// kept on disk for git-revert safety but no longer wired into the editor.
 #include "LoudnessGraph.h"
 #include "EqPanel.h"
 #include "LimiterPanel.h"
@@ -60,7 +61,11 @@ private:
 
     std::unique_ptr<HeaderBar> header;
     std::unique_ptr<FooterBar> footer;
-    std::unique_ptr<LufsPanel> lufsPanel;
+    // v1.0.4 Loudness Row Restack: LufsPanel + LoudnessGraph are merged into
+    // a single unified panel. lufsPanel is removed; graphPanel (kept as
+    // member name for migration ease) is the new LoudnessGraph that draws
+    // history bars, hero LUFS readout, L/R per-channel meters, Y-axis labels,
+    // secondary chips, and the single dashed -14 target line.
     std::unique_ptr<LoudnessGraph> graphPanel;
     
     std::unique_ptr<TabBarComponent> tabBar;

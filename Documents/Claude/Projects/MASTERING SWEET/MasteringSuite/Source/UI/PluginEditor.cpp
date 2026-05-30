@@ -12,9 +12,8 @@ PluginEditor::PluginEditor(MasteringSuiteProcessor& proc)
     footer = std::make_unique<FooterBar>(proc);
     addAndMakeVisible(*footer);
 
-    lufsPanel = std::make_unique<LufsPanel>(proc);
-    addAndMakeVisible(*lufsPanel);
-
+    // v1.0.4 Loudness Row Restack: LufsPanel is no longer instantiated.
+    // graphPanel is now the unified panel (history + hero + L/R + chips).
     graphPanel = std::make_unique<LoudnessGraph>(proc);
     addAndMakeVisible(*graphPanel);
 
@@ -249,12 +248,8 @@ void PluginEditor::resized() {
 
     const int gap = mst::theme::gridGap;
     
-    // Row 1: Meters (Top Half)
+    // Row 1: Loudness panel (v1.0.4 — unified, full-width).
     auto row1 = scaledR.removeFromTop(248);
-    const int colW = (row1.getWidth() - gap) / 2;
-    
-    lufsPanel->setBounds(row1.removeFromLeft(colW));
-    row1.removeFromLeft(gap);
     graphPanel->setBounds(row1);
 
     // Row 2: Active Module (Bottom Half)
@@ -269,9 +264,9 @@ void PluginEditor::resized() {
 
 // Timer callback
 void PluginEditor::timerCallback() {
-    lufsPanel->refresh();
-
-    // Pass actual Short-Term LUFS to the graph, or fallback to -70 if not initialized
+    // v1.0.4: graphPanel (the unified LoudnessGraph) handles its own L/R
+    // meter + hero readout + chips refresh inside paint(). Pushing a new
+    // short-term sample triggers repaint(), which redraws everything.
     float shortTermLufs = processor.getMeter().getShortTermLufs();
     if (shortTermLufs < -70.0f) shortTermLufs = -70.0f;
     graphPanel->pushSample(shortTermLufs);
