@@ -152,7 +152,7 @@ void EqCurveDisplay::paint(juce::Graphics& g) {
         g.fillEllipse(h.pos.x - 8, h.pos.y - 8, 16, 16);
 
         g.setColour(juce::Colour(mst::theme::bgBase));
-        g.setFont(juce::Font(10.0f).boldened());
+        g.setFont(juce::Font(juce::FontOptions(10.0f)).boldened());
         g.drawText(juce::String(h.index + 1), h.pos.x - 8, h.pos.y - 8, 16, 16, juce::Justification::centred);
 
         // v1.0.1-H3: hover state mirrors the knobs — brighten the outer ring.
@@ -250,6 +250,44 @@ float EqCurveDisplay::yToGain(float y) {
     return normalizedY * 24.0f - 12.0f;
 }
 
+// v1.0.2 §3 helpers — build the footer toast string from a band's live APVTS
+// state. Format matches Design spec: "EQ B<n+1> · <freq> · <gain> · Q <q> · <type>"
+// where freq auto-picks Hz vs kHz, gain carries the sign, and Q renders to two
+// decimals. EQ params don't have a stringFromValueFunction so we format
+// locally from the raw values rather than relying on getCurrentValueAsText().
+static juce::String formatEqHandleToast(juce::AudioProcessorValueTreeState& apvts, int i) {
+    const auto id = juce::String("eq") + juce::String(i);
+    auto getRaw = [&](const juce::String& sfx) -> float {
+        if (auto* p = apvts.getParameter(id + sfx))
+            return p->getNormalisableRange().convertFrom0to1(p->getValue());
+        return 0.0f;
+    };
+
+    juce::String label = juce::String("EQ B") + juce::String(i + 1);
+
+    const float freq = getRaw("Freq");
+    const float gain = getRaw("Gain");
+    const float q    = getRaw("Q");
+
+    juce::String freqStr = (freq >= 1000.0f)
+        ? juce::String(freq / 1000.0f, 2) + " kHz"
+        : juce::String((int)std::round(freq))  + " Hz";
+
+    juce::String gainStr;
+    if (std::abs(gain) < 0.05f) gainStr = "0.0 dB";
+    else                        gainStr = (gain > 0.0f ? "+" : "") + juce::String(gain, 1) + " dB";
+
+    juce::String qStr = juce::String(q, 2);
+
+    juce::String typeStr;
+    if (auto* p = apvts.getParameter(id + "Type"))
+        typeStr = p->getCurrentValueAsText().toUpperCase();
+
+    juce::String out = label + " · " + freqStr + " · " + gainStr + " · Q " + qStr;
+    if (typeStr.isNotEmpty()) out += " · " + typeStr;
+    return out;
+}
+
 void EqCurveDisplay::mouseDown(const juce::MouseEvent& e) {
     draggingHandleIndex = -1;
     for (int i = 0; i < 6; ++i) {
@@ -258,6 +296,10 @@ void EqCurveDisplay::mouseDown(const juce::MouseEvent& e) {
             handles[i].isDragging = true;
             break;
         }
+    }
+    if (draggingHandleIndex != -1 && onHandleDragStatus) {
+        onHandleDragStatus(formatEqHandleToast(processor.getAPVTS(), draggingHandleIndex),
+                           handles[draggingHandleIndex].color);
     }
     repaint();
 }
@@ -276,6 +318,11 @@ void EqCurveDisplay::mouseDrag(const juce::MouseEvent& e) {
         // v1.0.1-H1: APVTS listener -> callAsync repaint can lag visibly during
         // a fast drag. Force adjacent band cells to repaint NOW.
         repaintSiblingCells();
+
+        if (onHandleDragStatus) {
+            onHandleDragStatus(formatEqHandleToast(processor.getAPVTS(), draggingHandleIndex),
+                               handles[draggingHandleIndex].color);
+        }
     }
 }
 
@@ -315,6 +362,7 @@ void EqCurveDisplay::mouseUp(const juce::MouseEvent&) {
     if (draggingHandleIndex != -1) {
         handles[draggingHandleIndex].isDragging = false;
         draggingHandleIndex = -1;
+        if (onHandleDragEnd) onHandleDragEnd();
     }
     repaint();
 }

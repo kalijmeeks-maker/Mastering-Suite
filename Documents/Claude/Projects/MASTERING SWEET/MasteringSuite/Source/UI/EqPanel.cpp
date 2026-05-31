@@ -38,7 +38,7 @@ void EqPanel::paint(juce::Graphics& g) {
     g.drawRoundedRectangle(bounds, 8.0f, 1.0f);
 
     // Header
-    g.setFont(juce::Font(11.0f).boldened());
+    g.setFont(juce::Font(juce::FontOptions(11.0f)).boldened());
     g.setColour(juce::Colour(mst::theme::textHigh));
     g.drawText(juce::String::fromUTF8("EQ \u00B7 6-BAND PRECISION"), 14, 8, (int)bounds.getWidth() - 28, 14, juce::Justification::topLeft);
 
@@ -50,7 +50,7 @@ void EqPanel::paint(juce::Graphics& g) {
         float hf = *hpf, lf = *lpf;
         juce::String hStr = (hf < 1000.0f) ? juce::String((int)hf) + " Hz" : juce::String(hf / 1000.0f, 1) + " kHz";
         juce::String lStr = (lf < 1000.0f) ? juce::String((int)lf) + " Hz" : juce::String(lf / 1000.0f, 1) + " kHz";
-        g.setFont(juce::Font(9.0f));
+        g.setFont(juce::Font(juce::FontOptions(9.0f)));
         g.setColour(juce::Colour(mst::theme::textLow));
         g.drawText("HPF " + hStr + juce::String::fromUTF8(" \u00B7 LPF ") + lStr,
                    0, 8, (int)bounds.getWidth() - 14, 14, juce::Justification::topRight);

@@ -12,9 +12,8 @@ PluginEditor::PluginEditor(MasteringSuiteProcessor& proc)
     footer = std::make_unique<FooterBar>(proc);
     addAndMakeVisible(*footer);
 
-    lufsPanel = std::make_unique<LufsPanel>(proc);
-    addAndMakeVisible(*lufsPanel);
-
+    // v1.0.4 Loudness Row Restack: LufsPanel is no longer instantiated.
+    // graphPanel is now the unified panel (history + hero + L/R + chips).
     graphPanel = std::make_unique<LoudnessGraph>(proc);
     addAndMakeVisible(*graphPanel);
 
@@ -65,7 +64,89 @@ PluginEditor::PluginEditor(MasteringSuiteProcessor& proc)
     addChildComponent(valueBubble);
     valueBubble.setInterceptsMouseClicks(false, false);
 
+    // v1.0.2 §3 — listen to mouse events on EVERY descendant component so the
+    // footer toast can light up on any Slider drag (and so EqCurveDisplay can
+    // pipe its handle drags through the same setToast pipeline). Sliders still
+    // handle their own events first; we only observe.
+    addMouseListener(this, true);
+
+    // EQ canvas band handles aren't Sliders — wire their drag/release through
+    // the same FooterBar pipeline.
+    if (auto* canvas = eqPanel->getCurveDisplay()) {
+        canvas->onHandleDragStatus = [this](juce::String text, juce::Colour accent) {
+            if (footer) footer->setToast(std::move(text), accent);
+        };
+        canvas->onHandleDragEnd = [this]() {
+            if (footer) footer->clearToast();
+        };
+    }
+
     startTimerHz(30);
+}
+
+// Translate the slider's accent color (set per-knob via rotarySliderFillColourId)
+// into the module token shown in the toast: EQ / DYN / IMG / LIM. Any other
+// color returns empty — the toast then degrades to "PARAM · value" form rather
+// than failing.
+static juce::String moduleForAccent(juce::Colour c) {
+    const auto argb = c.getARGB();
+    if (argb == juce::Colour(mst::theme::tabEq).getARGB())  return "EQ";
+    if (argb == juce::Colour(mst::theme::tabDyn).getARGB()) return "DYN";
+    if (argb == juce::Colour(mst::theme::tabImg).getARGB()) return "IMG";
+    if (argb == juce::Colour(mst::theme::tabLim).getARGB()) return "LIM";
+    return {};
+}
+
+// Build the toast string from a slider. Reads:
+//   getTooltip()        — set to the APVTS parameter's friendly name in
+//                         each panel ctor (param->getName(64)).
+//   getTextFromValue()  — JUCE's formatted value text (honors the slider's
+//                         value-to-text decorator if installed by the param).
+//   getTextValueSuffix() — unit suffix if attached.
+static juce::String formatSliderToast(juce::Slider* s) {
+    if (s == nullptr) return {};
+    const auto accent = s->findColour(juce::Slider::rotarySliderFillColourId);
+    const auto mod    = moduleForAccent(accent);
+    auto label = s->getTooltip();
+    if (label.isEmpty()) label = "PARAM";
+    label = label.toUpperCase();
+    juce::String value = s->getTextFromValue(s->getValue());
+    auto suffix = s->getTextValueSuffix().trim();
+
+    juce::String out;
+    if (mod.isNotEmpty()) out += mod + " ";
+    out += label + " · " + value;
+    if (suffix.isNotEmpty()) out += " " + suffix;
+    return out;
+}
+
+void PluginEditor::mouseDown(const juce::MouseEvent& e) {
+    if (footer == nullptr) return;
+    if (auto* s = dynamic_cast<juce::Slider*>(e.eventComponent)) {
+        toastDragSrc      = s;
+        lastToastUpdateMs = juce::Time::getMillisecondCounterHiRes();
+        footer->setToast(formatSliderToast(s),
+                         s->findColour(juce::Slider::rotarySliderFillColourId));
+    }
+}
+
+void PluginEditor::mouseDrag(const juce::MouseEvent& e) {
+    juce::ignoreUnused(e);
+    if (footer == nullptr || toastDragSrc == nullptr) return;
+    // 30 Hz throttle per spec — drag events fire on every mouseMove and we
+    // don't need to re-format the toast at audio-thread cadence.
+    const double now = juce::Time::getMillisecondCounterHiRes();
+    if (now - lastToastUpdateMs < 33.0) return;
+    lastToastUpdateMs = now;
+    footer->setToast(formatSliderToast(toastDragSrc),
+                     toastDragSrc->findColour(juce::Slider::rotarySliderFillColourId));
+}
+
+void PluginEditor::mouseUp(const juce::MouseEvent& e) {
+    juce::ignoreUnused(e);
+    if (footer == nullptr || toastDragSrc == nullptr) return;
+    toastDragSrc = nullptr;
+    footer->clearToast();
 }
 
 void PluginEditor::KnobValueBubble::paint(juce::Graphics& g) {
@@ -80,7 +161,7 @@ void PluginEditor::KnobValueBubble::paint(juce::Graphics& g) {
     g.drawRoundedRectangle(bounds.reduced(1.0f), 6.0f, 2.0f);
     // 13pt mono, accent-tinted value + unit suffix.
     g.setColour(accent);
-    g.setFont(juce::Font(juce::Font::getDefaultMonospacedFontName(), 13.0f, juce::Font::plain));
+    g.setFont(juce::Font(juce::FontOptions(juce::Font::getDefaultMonospacedFontName(), 13.0f, juce::Font::plain)));
     juce::String txt = tracked->getTextFromValue(tracked->getValue());
     g.drawText(txt, getLocalBounds(), juce::Justification::centred);
 }
@@ -167,12 +248,8 @@ void PluginEditor::resized() {
 
     const int gap = mst::theme::gridGap;
     
-    // Row 1: Meters (Top Half)
+    // Row 1: Loudness panel (v1.0.4 — unified, full-width).
     auto row1 = scaledR.removeFromTop(248);
-    const int colW = (row1.getWidth() - gap) / 2;
-    
-    lufsPanel->setBounds(row1.removeFromLeft(colW));
-    row1.removeFromLeft(gap);
     graphPanel->setBounds(row1);
 
     // Row 2: Active Module (Bottom Half)
@@ -187,9 +264,9 @@ void PluginEditor::resized() {
 
 // Timer callback
 void PluginEditor::timerCallback() {
-    lufsPanel->refresh();
-
-    // Pass actual Short-Term LUFS to the graph, or fallback to -70 if not initialized
+    // v1.0.4: graphPanel (the unified LoudnessGraph) handles its own L/R
+    // meter + hero readout + chips refresh inside paint(). Pushing a new
+    // short-term sample triggers repaint(), which redraws everything.
     float shortTermLufs = processor.getMeter().getShortTermLufs();
     if (shortTermLufs < -70.0f) shortTermLufs = -70.0f;
     graphPanel->pushSample(shortTermLufs);

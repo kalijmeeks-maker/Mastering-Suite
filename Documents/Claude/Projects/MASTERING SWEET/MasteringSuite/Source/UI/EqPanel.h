@@ -16,6 +16,10 @@ public:
     void resized() override;
     void refreshSpectrum();
 
+    // Exposed so PluginEditor can wire the v1.0.2 §3 drag-toast callbacks
+    // straight onto the canvas (handles are custom hit-tested, not Sliders).
+    EqCurveDisplay* getCurveDisplay() { return curveDisplay.get(); }
+
 private:
     MasteringSuiteProcessor& processor;
     NeonLookAndFeel& lookAndFeel;

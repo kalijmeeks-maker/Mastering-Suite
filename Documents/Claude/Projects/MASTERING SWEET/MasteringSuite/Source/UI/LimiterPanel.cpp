@@ -45,7 +45,7 @@ void LimiterPanel::paint(juce::Graphics& g) {
     g.setColour(juce::Colour(mst::theme::border).withAlpha(0.3f));
     g.drawRoundedRectangle(bounds, 8.0f, 1.0f);
 
-    g.setFont(juce::Font(11.0f).boldened());
+    g.setFont(juce::Font(juce::FontOptions(11.0f)).boldened());
     g.setColour(juce::Colour(mst::theme::textHigh));
     g.drawText(juce::String::fromUTF8("LIMITER · TRUE PEAK"),
                14, 8, (int)bounds.getWidth() - 28, 14, juce::Justification::topLeft);
@@ -54,7 +54,7 @@ void LimiterPanel::paint(juce::Graphics& g) {
     drawModePicker(g, modeArea);
 
     // ── Knob labels (center 2×2) ──────────────────────────────────────
-    g.setFont(juce::Font(9.0f));
+    g.setFont(juce::Font(juce::FontOptions(9.0f)));
     g.setColour(juce::Colour(mst::theme::textMid));
     auto labelUnder = [&](juce::Component& k, juce::String text) {
         g.drawText(text, k.getX(), k.getBottom() - 2, k.getWidth(), 14, juce::Justification::centred);
@@ -72,7 +72,7 @@ void LimiterPanel::paint(juce::Graphics& g) {
     g.drawRoundedRectangle(m, 4.0f, 1.0f);
 
     // Header label centered above the segments
-    g.setFont(juce::Font(8.0f).boldened());
+    g.setFont(juce::Font(juce::FontOptions(8.0f)).boldened());
     g.setColour(juce::Colour(mst::theme::textLow));
     g.drawText("GR", m.toNearestInt().removeFromTop(14), juce::Justification::centred);
 
@@ -85,6 +85,47 @@ void LimiterPanel::paint(juce::Graphics& g) {
     float norm = juce::jlimit(0.0f, 1.0f, gr / 18.0f);
     int lit = (int)(norm * N);
 
+    // ── v1.0.2 §2 pulse + throb motion (state ticked in refresh()) ────────
+    const double now = juce::Time::getMillisecondCounterHiRes();
+    float glowAlpha = 0.0f;
+    float yScale    = 1.0f;
+    juce::Colour glowColor = juce::Colour(0xFFFF8A3A);  // amber baseline
+
+    if (isThrobbing) {
+        // 1.2 s sin cycle. Phase∈[0,1] → glow alpha lerp 0.35 → 0.55 (+60% peak).
+        const double t = (now - throbRefMs) / 1200.0;
+        const float phase = (float)(0.5 + 0.5 * std::sin(t * 2.0 * juce::MathConstants<double>::pi));
+        glowAlpha = juce::jmap(phase, 0.0f, 1.0f, 0.35f, 0.55f);
+        glowColor = juce::Colour(0xFFFF8A3A);   // amber baseline, no red lerp on throb
+    } else if (isPulsing) {
+        // 240 ms ease-out: triangular rise 0→peak at 35%, fall peak→0 by 100%.
+        // glow lerps amber → red → amber; scaleY 1.0 → 1.025 → 1.0.
+        const float t = (float)((now - pulseStartMs) / 240.0);
+        const float t01 = juce::jlimit(0.0f, 1.0f, t);
+        constexpr float peakAt = 0.35f;
+        const float p = (t01 < peakAt) ? (t01 / peakAt) : (1.0f - (t01 - peakAt) / (1.0f - peakAt));
+        glowAlpha = 0.60f * p;
+        glowColor = juce::Colour::fromFloatRGBA(
+            1.0f,
+            juce::jmap(p, 0.0f, 1.0f, 0.54f, 0.23f),   // amber green-chan 0xFF8A → red 0xFF3A
+            juce::jmap(p, 0.0f, 1.0f, 0.23f, 0.30f),   // amber blue 0x3A → red 0x4D
+            1.0f);
+        yScale = 1.0f + 0.025f * p;
+    }
+
+    // Halo behind the segment column. Soft, behind, no scale (only fill scales).
+    if (glowAlpha > 0.01f) {
+        g.setColour(glowColor.withAlpha(glowAlpha));
+        g.fillRoundedRectangle(segArea.expanded(8.0f, 10.0f), 6.0f);
+    }
+
+    // Segment column. scaleY pivots from bottom (transform-origin: bottom) so
+    // the fill stretches upward; never scaleX (would distort against the frame).
+    juce::Graphics::ScopedSaveState save(g);
+    if (yScale != 1.0f) {
+        g.addTransform(juce::AffineTransform::scale(
+            1.0f, yScale, segArea.getCentreX(), segArea.getBottom()));
+    }
     for (int i = 0; i < N; ++i) {
         float y = segArea.getY() + i * (segH + gap);
         bool on = (i >= (N - lit));
@@ -100,7 +141,7 @@ void LimiterPanel::paint(juce::Graphics& g) {
     }
 
     // GR numeric readout at the bottom
-    g.setFont(juce::Font(11.0f));
+    g.setFont(juce::Font(juce::FontOptions(11.0f)));
     g.setColour(juce::Colour(0xFFFF8A3A));
     juce::String grStr = (gr > 0.05f) ? "-" + juce::String(gr, 1) : "0.0";
     g.drawText(grStr, m.toNearestInt().removeFromBottom(14), juce::Justification::centred);
@@ -130,13 +171,13 @@ void LimiterPanel::drawModePicker(juce::Graphics& g, juce::Rectangle<int> area) 
         g.drawRoundedRectangle(cell, 4.0f, active ? 1.5f : 1.0f);
 
         // Title (mint when active, mid otherwise)
-        g.setFont(juce::Font(10.0f).boldened());
+        g.setFont(juce::Font(juce::FontOptions(10.0f)).boldened());
         g.setColour(active ? accent : juce::Colour(mst::theme::textMid));
         g.drawText(modes[i],
                    cell.toNearestInt().reduced(10, 4).removeFromTop(16),
                    juce::Justification::centredLeft);
         // Description (mono, dim)
-        g.setFont(juce::Font(8.0f));
+        g.setFont(juce::Font(juce::FontOptions(8.0f)));
         g.setColour(juce::Colour(mst::theme::textLow));
         g.drawText(descs[i],
                    cell.toNearestInt().reduced(10, 4).removeFromBottom(14),
@@ -180,5 +221,55 @@ void LimiterPanel::resized() {
 }
 
 void LimiterPanel::refresh() {
+    tickGrAnimation();
     repaint();
+}
+
+void LimiterPanel::tickGrAnimation() {
+    // v1.0.2 §2 state machine. Read smoothed GR off the limiter, fire pulse
+    // on rising-edge / engage throb on sustained reduction. Thresholds and
+    // durations are from "Mastering Sweet v1.0.2 Polish Direction.html"
+    // verbatim — don't tune without spec change.
+    constexpr float  kThreshold      = 3.0f;     // dB
+    constexpr double kPulseDebounce  = 100.0;    // ms (min between pulses)
+    constexpr double kPulseDuration  = 240.0;    // ms (single-shot lifetime)
+    constexpr double kSustainEngage  = 500.0;    // ms (over threshold to engage throb)
+    constexpr double kThrobHysteresis = 250.0;   // ms (below threshold before disengage)
+
+    const float  gr   = std::abs(processor.getLimiter().getCurrentGainReduction());
+    const double now  = juce::Time::getMillisecondCounterHiRes();
+
+    // Throb: engage / disengage with hysteresis
+    if (gr >= kThreshold) {
+        if (sustainStartMs == 0.0) sustainStartMs = now;
+        sustainReleaseMs = 0.0;
+        if (!isThrobbing && (now - sustainStartMs >= kSustainEngage)) {
+            isThrobbing = true;
+            throbRefMs  = now;
+        }
+    } else {
+        sustainStartMs = 0.0;
+        if (isThrobbing) {
+            if (sustainReleaseMs == 0.0) sustainReleaseMs = now;
+            if (now - sustainReleaseMs >= kThrobHysteresis) {
+                isThrobbing = false;
+                sustainReleaseMs = 0.0;
+            }
+        }
+    }
+
+    // Pulse: rising-edge across threshold, debounced. Suppressed while throbbing
+    // (per spec — throb IS the sustained-reduction signal; pulse would be noise).
+    if (!isThrobbing && prevGr < kThreshold && gr >= kThreshold) {
+        if (now - lastPulseMs >= kPulseDebounce) {
+            isPulsing   = true;
+            pulseStartMs = now;
+            lastPulseMs  = now;
+        }
+    }
+    if (isPulsing && (now - pulseStartMs >= kPulseDuration)) {
+        isPulsing = false;
+    }
+
+    prevGr = gr;
 }

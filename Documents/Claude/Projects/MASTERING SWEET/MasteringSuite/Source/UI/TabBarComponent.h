@@ -47,7 +47,7 @@ public:
             // Tab label
             g.setColour(isSelected ? juce::Colour(mst::theme::textHigh)
                                    : juce::Colour(mst::theme::textLow).withAlpha(0.6f));
-            g.setFont(juce::Font(11.0f).boldened());
+            g.setFont(juce::Font(juce::FontOptions(11.0f)).boldened());
             auto labelArea = tabRect.withX(dotX + dotR + 8.0f).withWidth(tabRect.getRight() - (dotX + dotR + 8.0f) - 32.0f);
             g.drawText(tabs[i].name, labelArea.toNearestInt(), juce::Justification::centredLeft);
 
@@ -99,7 +99,7 @@ public:
             float c = processor.getCorrelation();
             juce::String txt = (c >= 0.0f ? "+" : "") + juce::String(c, 2);
             g.setColour(juce::Colour(mst::theme::tabImg));
-            g.setFont(juce::Font(9.0f).boldened());
+            g.setFont(juce::Font(juce::FontOptions(9.0f)).boldened());
             g.drawText(txt, area, juce::Justification::centred);
         } else if (tabIdx == 3) {
             // LIMITER: 2x14 mint GR bar + 4x4 TP status dot.

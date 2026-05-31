@@ -52,7 +52,7 @@ void ImagerPanel::paint(juce::Graphics& g) {
     g.drawRoundedRectangle(bounds, 8.0f, 1.0f);
 
     // Header
-    g.setFont(juce::Font(11.0f).boldened());
+    g.setFont(juce::Font(juce::FontOptions(11.0f)).boldened());
     g.setColour(juce::Colour(mst::theme::textHigh));
     g.drawText(juce::String::fromUTF8("IMAGER \u00B7 STEREO FIELD"), 14, 8, (int)bounds.getWidth() - 28, 14, juce::Justification::topLeft);
 
@@ -74,15 +74,24 @@ void ImagerPanel::drawGoniometer(juce::Graphics& g, juce::Rectangle<float> area)
     std::array<float, 1024> left, right;
     processor.getGoniometerSamples(left.data(), right.data());
 
-    // RMS over the last ~200ms window (1024 samples ≈ 21ms @ 48k — close enough
-    // for visual smoothing). Design's call: AUTO mode uses 2×RMS → 80% radius
-    // so the scatter stays stable across material from -44 LUFS classical to -8 LUFS EDM.
+    // RMS over the last 1024-sample window (≈ 21ms @ 48k). Raw RMS drove the
+    // AUTO-scale norm directly, but block-to-block variance made the scatter's
+    // size pop visibly on dynamic material. Now we smooth via a one-pole EMA
+    // (α=0.15 → ~200ms time constant) so the scale settles cleanly. Loud→quiet
+    // transitions take a beat to shrink — Design's call, intentional.
     double sumSq = 0.0;
     for (int i = 0; i < 1024; ++i) {
         sumSq += (double)left[i]  * left[i];
         sumSq += (double)right[i] * right[i];
     }
-    const float rms = (float)std::sqrt(sumSq / (2.0 * 1024));
+    const float rmsRaw = (float)std::sqrt(sumSq / (2.0 * 1024));
+    if (rmsSmoothed < 0.0f) {
+        rmsSmoothed = rmsRaw;                // first frame: snap, no settle-in
+    } else {
+        constexpr float alpha = 0.15f;
+        rmsSmoothed = alpha * rmsRaw + (1.0f - alpha) * rmsSmoothed;
+    }
+    const float rms = rmsSmoothed;
     const float rmsDb = juce::Decibels::gainToDecibels(rms, -100.0f);
 
     const float radius = juce::jmin(area.getWidth(), area.getHeight()) * 0.45f;
@@ -92,7 +101,7 @@ void ImagerPanel::drawGoniometer(juce::Graphics& g, juce::Rectangle<float> area)
     // Low-signal caption per Design — no scatter, just a dim inline label.
     if (rmsDb < -60.0f) {
         g.setColour(juce::Colour(mst::theme::textLow).withAlpha(0.7f));
-        g.setFont(juce::Font(10.0f).boldened());
+        g.setFont(juce::Font(juce::FontOptions(10.0f)).boldened());
         g.drawText("INPUT TOO QUIET",
                    area.withSizeKeepingCentre(area.getWidth(), 20).toNearestInt(),
                    juce::Justification::centred);
@@ -116,37 +125,44 @@ void ImagerPanel::drawGoniometer(juce::Graphics& g, juce::Rectangle<float> area)
 
     const juce::Colour scatter = juce::Colour(mst::theme::tabImg);
 
-    // Connected-line phosphor trace + brighter dots.
-    juce::Path trace;
-    bool started = false;
-    for (int i = 0; i < 1024; ++i) {
-        float l = left[i] * norm;
-        float r = right[i] * norm;
+    // Persistence-of-vision trail per Design v1.0.2 §1: maintain a ring of
+    // recent stereo samples across frames, then draw each with an alpha that
+    // decays with age. Newest dots full-bright; oldest fade to transparent.
+    // Explicit per-dot alpha, not an overlay rect — keeps the violet color
+    // pure and avoids the muddied look of fade-rect compositing.
+    //
+    // Decimation: 1024 audio samples / 25 ≈ 41 new entries per repaint.
+    // 30 Hz × 41 = 1230 samples/sec → 960-entry ring drains in ~780 ms.
+    constexpr int decimation = 25;
+    for (int i = 0; i < 1024; i += decimation) {
+        scopePoints.push_back({ left[i], right[i] });  // x = L, y = R
+    }
+    while ((int)scopePoints.size() > maxPoints) {
+        scopePoints.pop_front();
+    }
+
+    // Draw oldest → newest so fresh dots paint on top of decayed ones. Front
+    // of deque is oldest (age = 1), back is newest (age = 0). Alpha curve
+    // pow(1 - age, 1.8) per spec — exponent > 1 keeps the head bright and
+    // pulls the tail down sharply at the end (looks like a comet, not a fog).
+    const int ringN = (int)scopePoints.size();
+    for (int i = 0; i < ringN; ++i) {
+        const auto& s = scopePoints[(size_t)i];
+        const float l = s.x * norm;
+        const float r = s.y * norm;
         // M/S basis: vertical = (L+R)/√2, horizontal = (L-R)/√2
         float sx = (l - r) * 0.7071f * radius;
         float sy = (l + r) * 0.7071f * radius;
-        // Clamp inside the field so a transient spike doesn't paint outside the ellipse.
         sx = juce::jlimit(-radius, radius, sx);
         sy = juce::jlimit(-radius, radius, sy);
-        float dx = cx + sx;
-        float dy = cy - sy;
+        const float dx = cx + sx;
+        const float dy = cy - sy;
         if (!std::isfinite(dx) || !std::isfinite(dy)) continue;
-        if (!started) { trace.startNewSubPath(dx, dy); started = true; }
-        else            trace.lineTo(dx, dy);
-    }
-    g.setColour(scatter.withAlpha(0.45f));
-    g.strokePath(trace, juce::PathStrokeType(0.8f));
 
-    g.setColour(scatter.withAlpha(0.85f));
-    for (int i = 0; i < 1024; i += 2) {
-        float l = left[i] * norm;
-        float r = right[i] * norm;
-        float sx = juce::jlimit(-radius, radius, (l - r) * 0.7071f * radius);
-        float sy = juce::jlimit(-radius, radius, (l + r) * 0.7071f * radius);
-        float dx = cx + sx;
-        float dy = cy - sy;
-        if (!std::isfinite(dx) || !std::isfinite(dy)) continue;
-        g.fillEllipse(dx - 1.0f, dy - 1.0f, 2.0f, 2.0f);
+        const float age   = (ringN > 1) ? 1.0f - (float)i / (float)(ringN - 1) : 0.0f;
+        const float alpha = std::pow(1.0f - age, 1.8f);
+        g.setColour(scatter.withAlpha(alpha));
+        g.fillEllipse(dx - 1.2f, dy - 1.2f, 2.4f, 2.4f);
     }
 }
 

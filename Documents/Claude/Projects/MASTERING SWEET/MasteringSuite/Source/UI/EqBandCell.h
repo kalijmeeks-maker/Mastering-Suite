@@ -55,7 +55,7 @@ public:
         int ti = juce::jlimit(0, 5, (int)typeVal);
         bool bandOn = (ti != 0);
 
-        g.setFont(juce::Font(8.0f).boldened());
+        g.setFont(juce::Font(juce::FontOptions(8.0f)).boldened());
         g.setColour(color);
         g.drawText(juce::String(index + 1), juce::Rectangle<float>(bounds.getX() + 6, bounds.getY() + pad, 16, 10).toNearestInt(),
                    juce::Justification::topLeft);
@@ -86,11 +86,11 @@ public:
 
         auto drawRow = [&](int row, const char* k, const juce::String& v, juce::Colour valColor) {
             float y = rowY0 + row * rowH;
-            g.setFont(juce::Font(8.0f));
+            g.setFont(juce::Font(juce::FontOptions(8.0f)));
             g.setColour(juce::Colour(mst::theme::textLow));
             g.drawText(k, juce::Rectangle<float>(kCol, y, 40, rowH).toNearestInt(),
                        juce::Justification::centredLeft);
-            g.setFont(juce::Font(9.0f));
+            g.setFont(juce::Font(juce::FontOptions(9.0f)));
             g.setColour(valColor);
             g.drawText(v, juce::Rectangle<float>(kCol + 22, y, vW - 18, rowH).toNearestInt(),
                        juce::Justification::centredRight);
@@ -121,7 +121,7 @@ public:
                 // 1-line tooltip subtitle using parameter metadata (v2 expanded mode).
                 auto* param = processor.getAPVTS().getParameter("eq" + juce::String(index) + "Type");
                 juce::String hint = param != nullptr ? param->getName(64) : juce::String();
-                g.setFont(juce::Font(7.0f));
+                g.setFont(juce::Font(juce::FontOptions(7.0f)));
                 g.setColour(juce::Colour(mst::theme::textLow).withAlpha(0.75f));
                 g.drawText(hint,
                            juce::Rectangle<float>(kCol, bounds.getBottom() - pad - 9.0f,

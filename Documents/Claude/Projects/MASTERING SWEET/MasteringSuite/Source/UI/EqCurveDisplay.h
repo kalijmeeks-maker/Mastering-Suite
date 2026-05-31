@@ -25,6 +25,13 @@ public:
     void mouseDown(const juce::MouseEvent& e) override;
     void mouseDrag(const juce::MouseEvent& e) override;
     void mouseUp(const juce::MouseEvent& e) override;
+
+    // v1.0.2 §3 — footer drag toast hook. Canvas handles aren't Sliders, so
+    // the editor-level MouseListener can't introspect them. PluginEditor sets
+    // these callbacks to route handle drag/release through the same
+    // FooterBar::setToast / clearToast pipeline as the slider drags.
+    std::function<void(juce::String text, juce::Colour accent)> onHandleDragStatus;
+    std::function<void()>                                        onHandleDragEnd;
     void mouseDoubleClick(const juce::MouseEvent& e) override;
     void mouseMove(const juce::MouseEvent& e) override;
     void mouseExit(const juce::MouseEvent& e) override;
