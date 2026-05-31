@@ -57,10 +57,6 @@
         <FILE id="MTS01c" name="ModuleTabStrip.cpp" compile="1" resource="0" file="Source/UI/ModuleTabStrip.cpp"/>
         <FILE id="MDH01h" name="ModuleHeader.h" compile="0" resource="0" file="Source/UI/ModuleHeader.h"/>
         <FILE id="MDH01c" name="ModuleHeader.cpp" compile="1" resource="0" file="Source/UI/ModuleHeader.cpp"/>
-        <FILE id="TCC01h" name="TransferCurveComponent.h" compile="0" resource="0" file="Source/UI/TransferCurveComponent.h"/>
-        <FILE id="TCC01c" name="TransferCurveComponent.cpp" compile="1" resource="0" file="Source/UI/TransferCurveComponent.cpp"/>
-        <FILE id="CGR01h" name="CompressorGRMeter.h" compile="0" resource="0" file="Source/UI/CompressorGRMeter.h"/>
-        <FILE id="CGR01c" name="CompressorGRMeter.cpp" compile="1" resource="0" file="Source/UI/CompressorGRMeter.cpp"/>
         <FILE id="DYM01h" name="DynamicsModule.h" compile="0" resource="0" file="Source/UI/DynamicsModule.h"/>
         <FILE id="DYM01c" name="DynamicsModule.cpp" compile="1" resource="0" file="Source/UI/DynamicsModule.cpp"/>
         <FILE id="BTS01h" name="BottomStrip.h" compile="0" resource="0" file="Source/UI/BottomStrip.h"/>
