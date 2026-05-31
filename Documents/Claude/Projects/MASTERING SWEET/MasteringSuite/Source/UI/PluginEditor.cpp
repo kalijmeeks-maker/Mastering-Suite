@@ -161,7 +161,7 @@ void PluginEditor::KnobValueBubble::paint(juce::Graphics& g) {
     g.drawRoundedRectangle(bounds.reduced(1.0f), 6.0f, 2.0f);
     // 13pt mono, accent-tinted value + unit suffix.
     g.setColour(accent);
-    g.setFont(juce::Font(juce::Font::getDefaultMonospacedFontName(), 13.0f, juce::Font::plain));
+    g.setFont(juce::Font(juce::FontOptions(juce::Font::getDefaultMonospacedFontName(), 13.0f, juce::Font::plain)));
     juce::String txt = tracked->getTextFromValue(tracked->getValue());
     g.drawText(txt, getLocalBounds(), juce::Justification::centred);
 }

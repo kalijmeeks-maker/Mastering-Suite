@@ -220,7 +220,7 @@ void HeaderBar::paint(juce::Graphics& g) {
         g.drawImage(brandMarkImage, markRect, juce::RectanglePlacement::stretchToFit);
 
     // Wordmark "MASTERING SWEET"
-    g.setFont(juce::Font(14.0f).boldened());
+    g.setFont(juce::Font(juce::FontOptions(14.0f)).boldened());
     g.setColour(juce::Colour(mst::theme::textHigh));
     g.drawText("MASTERING ", markX + 42.0f, 0, 150, (int)bounds.getHeight(), juce::Justification::centredLeft);
 
@@ -228,7 +228,7 @@ void HeaderBar::paint(juce::Graphics& g) {
     g.drawText("SWEET", markX + 152.0f, 0, 100, (int)bounds.getHeight(), juce::Justification::centredLeft);
 
     // Tag text "v1.0 · STEREO · 48 kHz"
-    g.setFont(juce::Font(9.0f));
+    g.setFont(juce::Font(juce::FontOptions(9.0f)));
     g.setColour(juce::Colour(mst::theme::textLow));
     g.drawText(juce::String::fromUTF8("v1.0 \u00B7 STEREO \u00B7 48 kHz"), (int)markX + 250, 0, 150, (int)bounds.getHeight(), juce::Justification::centredLeft);
 }

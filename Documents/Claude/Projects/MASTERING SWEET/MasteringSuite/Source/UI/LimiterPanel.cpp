@@ -45,7 +45,7 @@ void LimiterPanel::paint(juce::Graphics& g) {
     g.setColour(juce::Colour(mst::theme::border).withAlpha(0.3f));
     g.drawRoundedRectangle(bounds, 8.0f, 1.0f);
 
-    g.setFont(juce::Font(11.0f).boldened());
+    g.setFont(juce::Font(juce::FontOptions(11.0f)).boldened());
     g.setColour(juce::Colour(mst::theme::textHigh));
     g.drawText(juce::String::fromUTF8("LIMITER · TRUE PEAK"),
                14, 8, (int)bounds.getWidth() - 28, 14, juce::Justification::topLeft);
@@ -54,7 +54,7 @@ void LimiterPanel::paint(juce::Graphics& g) {
     drawModePicker(g, modeArea);
 
     // ── Knob labels (center 2×2) ──────────────────────────────────────
-    g.setFont(juce::Font(9.0f));
+    g.setFont(juce::Font(juce::FontOptions(9.0f)));
     g.setColour(juce::Colour(mst::theme::textMid));
     auto labelUnder = [&](juce::Component& k, juce::String text) {
         g.drawText(text, k.getX(), k.getBottom() - 2, k.getWidth(), 14, juce::Justification::centred);
@@ -72,7 +72,7 @@ void LimiterPanel::paint(juce::Graphics& g) {
     g.drawRoundedRectangle(m, 4.0f, 1.0f);
 
     // Header label centered above the segments
-    g.setFont(juce::Font(8.0f).boldened());
+    g.setFont(juce::Font(juce::FontOptions(8.0f)).boldened());
     g.setColour(juce::Colour(mst::theme::textLow));
     g.drawText("GR", m.toNearestInt().removeFromTop(14), juce::Justification::centred);
 
@@ -141,7 +141,7 @@ void LimiterPanel::paint(juce::Graphics& g) {
     }
 
     // GR numeric readout at the bottom
-    g.setFont(juce::Font(11.0f));
+    g.setFont(juce::Font(juce::FontOptions(11.0f)));
     g.setColour(juce::Colour(0xFFFF8A3A));
     juce::String grStr = (gr > 0.05f) ? "-" + juce::String(gr, 1) : "0.0";
     g.drawText(grStr, m.toNearestInt().removeFromBottom(14), juce::Justification::centred);
@@ -171,13 +171,13 @@ void LimiterPanel::drawModePicker(juce::Graphics& g, juce::Rectangle<int> area) 
         g.drawRoundedRectangle(cell, 4.0f, active ? 1.5f : 1.0f);
 
         // Title (mint when active, mid otherwise)
-        g.setFont(juce::Font(10.0f).boldened());
+        g.setFont(juce::Font(juce::FontOptions(10.0f)).boldened());
         g.setColour(active ? accent : juce::Colour(mst::theme::textMid));
         g.drawText(modes[i],
                    cell.toNearestInt().reduced(10, 4).removeFromTop(16),
                    juce::Justification::centredLeft);
         // Description (mono, dim)
-        g.setFont(juce::Font(8.0f));
+        g.setFont(juce::Font(juce::FontOptions(8.0f)));
         g.setColour(juce::Colour(mst::theme::textLow));
         g.drawText(descs[i],
                    cell.toNearestInt().reduced(10, 4).removeFromBottom(14),

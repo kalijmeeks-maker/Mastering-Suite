@@ -152,7 +152,7 @@ void EqCurveDisplay::paint(juce::Graphics& g) {
         g.fillEllipse(h.pos.x - 8, h.pos.y - 8, 16, 16);
 
         g.setColour(juce::Colour(mst::theme::bgBase));
-        g.setFont(juce::Font(10.0f).boldened());
+        g.setFont(juce::Font(juce::FontOptions(10.0f)).boldened());
         g.drawText(juce::String(h.index + 1), h.pos.x - 8, h.pos.y - 8, 16, 16, juce::Justification::centred);
 
         // v1.0.1-H3: hover state mirrors the knobs — brighten the outer ring.

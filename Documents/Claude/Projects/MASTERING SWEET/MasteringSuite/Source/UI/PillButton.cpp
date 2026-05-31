@@ -42,7 +42,7 @@ void PillButton::paint(juce::Graphics& g)
     }
 
     g.setColour(textColor);
-    g.setFont(juce::Font(10.0f).boldened());
+    g.setFont(juce::Font(juce::FontOptions(10.0f)).boldened());
     auto textArea = bounds.toNearestInt();
     if (textLeftPad > 0)
         textArea = textArea.withTrimmedLeft(textLeftPad).withTrimmedRight(8);

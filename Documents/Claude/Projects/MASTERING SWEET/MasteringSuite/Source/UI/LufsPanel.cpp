@@ -19,7 +19,7 @@ void LufsPanel::paint(juce::Graphics& g) {
     g.drawRoundedRectangle(bounds, 8.0f, 1.0f);
 
     // Header
-    g.setFont(juce::Font(11.0f).boldened());
+    g.setFont(juce::Font(juce::FontOptions(11.0f)).boldened());
     g.setColour(juce::Colour(mst::theme::textHigh));
     g.drawText(juce::String::fromUTF8("LOUDNESS \u00B7 LUFS"), 14, 8, (int)bounds.getWidth() - 28, 14, juce::Justification::topLeft);
 
@@ -27,11 +27,11 @@ void LufsPanel::paint(juce::Graphics& g) {
     float integratedLufs = processor.getMeter().getIntegratedLufs();
     juce::String intLufsStr = (integratedLufs > -70.0f) ? juce::String(integratedLufs, 1) : "-inf";
 
-    g.setFont(juce::Font(48.0f).boldened());
+    g.setFont(juce::Font(juce::FontOptions(48.0f)).boldened());
     g.setColour(juce::Colour(mst::theme::tabEq)); // Cyan
     g.drawText(intLufsStr, 14, 40, 150, 60, juce::Justification::centredLeft);
     
-    g.setFont(juce::Font(9.0f).boldened());
+    g.setFont(juce::Font(juce::FontOptions(9.0f)).boldened());
     g.setColour(juce::Colour(mst::theme::textLow));
     g.drawText("INTEGRATED", 16, 95, 100, 12, juce::Justification::topLeft);
 
@@ -98,13 +98,13 @@ void LufsPanel::paint(juce::Graphics& g) {
     drawColumn(colR, processor.getChannelLevelR(), peakHoldR);
 
     // Per-column letter labels
-    g.setFont(juce::Font(7.0f).boldened());
+    g.setFont(juce::Font(juce::FontOptions(7.0f)).boldened());
     g.setColour(juce::Colour(mst::theme::textLow));
     g.drawText("L", (int)colL, (int)meterArea.getBottom(), (int)chW, 10, juce::Justification::centred);
     g.drawText("R", (int)colR, (int)meterArea.getBottom(), (int)chW, 10, juce::Justification::centred);
 
     // Shared scale labels in the reserved right strip (inside panel bounds).
-    g.setFont(juce::Font(7.0f));
+    g.setFont(juce::Font(juce::FontOptions(7.0f)));
     g.setColour(juce::Colour(mst::theme::textLow));
     for (int db : {0, -6, -12, -18, -24, -36, -48}) {
         float y = meterArea.getBottom() - ((db + 60.0f) / 60.0f) * meterArea.getHeight();
@@ -118,7 +118,7 @@ void LufsPanel::paint(juce::Graphics& g) {
     auto drawRow = [&](juce::String label, float val, int row, juce::String unit) {
         juce::String valStr = (val > -70.0f) ? juce::String(val, 1) : "-inf";
         float y = readoutArea.getY() + row * rowH;
-        g.setFont(juce::Font(9.0f));
+        g.setFont(juce::Font(juce::FontOptions(9.0f)));
         g.setColour(juce::Colour(mst::theme::textLow));
         g.drawText(label, readoutArea.getX(), (int)y, 65, rowH, juce::Justification::centredLeft);
         

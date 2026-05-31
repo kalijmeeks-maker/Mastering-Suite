@@ -67,7 +67,7 @@ void LoudnessGraph::paint(juce::Graphics& g) {
     // ════════════════════════════════════════════════════════════════════
     auto titleRow = bounds.removeFromTop(kTitleRowH);
     {
-        g.setFont(juce::Font(11.0f).boldened());
+        g.setFont(juce::Font(juce::FontOptions(11.0f)).boldened());
         g.setColour(juce::Colour(mst::theme::textHigh));
         g.drawText("LOUDNESS HISTORY",
                    (int)(titleRow.getX() + kLeftPad), (int)titleRow.getY(),
@@ -183,7 +183,7 @@ void LoudnessGraph::paint(juce::Graphics& g) {
         drawColumn(rX, processor.getChannelLevelR(), peakHoldR);
 
         // L/R letter labels under each column
-        g.setFont(juce::Font(7.0f).boldened());
+        g.setFont(juce::Font(juce::FontOptions(7.0f)).boldened());
         g.setColour(juce::Colour(mst::theme::textLow));
         g.drawText("L", (int)lX, (int)botY,     (int)kLRMeterW, 10, juce::Justification::centred);
         g.drawText("R", (int)rX, (int)botY,     (int)kLRMeterW, 10, juce::Justification::centred);
@@ -191,7 +191,7 @@ void LoudnessGraph::paint(juce::Graphics& g) {
         // Shared dB axis labels (0/-6/-12/-18/-24/-36/-48) in the 10-px
         // labels strip on the right of R. Peak-meter scale — intentionally
         // different from the -48→0 LUFS axis the bars use.
-        g.setFont(juce::Font(7.0f));
+        g.setFont(juce::Font(juce::FontOptions(7.0f)));
         for (int db : {0, -6, -12, -18, -24, -36, -48}) {
             const float y = botY - ((db + 60.0f) / 60.0f) * colH;
             g.drawText(juce::String(db), (int)labelsX + 1, (int)y - 4,
@@ -257,7 +257,7 @@ void LoudnessGraph::paint(juce::Graphics& g) {
 
     // Y-axis labels next to the bars (same set as v1.0.1)
     {
-        g.setFont(juce::Font(8.0f));
+        g.setFont(juce::Font(juce::FontOptions(8.0f)));
         g.setColour(juce::Colour(mst::theme::textLow));
         for (int lufs : {0, -8, -16, -24, -32, -40}) {
             const float yNorm = ((float)lufs - kBottomDb) / kRangeDb;
@@ -293,7 +293,7 @@ void LoudnessGraph::paint(juce::Graphics& g) {
 
         // Measure the hero glyph width so the "LUFS" suffix sits flush
         // regardless of the value (-inf vs -14.2 vs -7.3).
-        const float heroNumberW = heroFont.getStringWidthFloat(heroStr);
+        const float heroNumberW = juce::GlyphArrangement::getStringWidth(heroFont, heroStr);
 
         g.setFont(juce::Font(juce::FontOptions("SF Mono", 14.0f, juce::Font::plain)));
         g.setColour(juce::Colour(mst::theme::textLow));

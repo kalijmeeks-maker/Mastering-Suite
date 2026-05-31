@@ -52,7 +52,7 @@ void ImagerPanel::paint(juce::Graphics& g) {
     g.drawRoundedRectangle(bounds, 8.0f, 1.0f);
 
     // Header
-    g.setFont(juce::Font(11.0f).boldened());
+    g.setFont(juce::Font(juce::FontOptions(11.0f)).boldened());
     g.setColour(juce::Colour(mst::theme::textHigh));
     g.drawText(juce::String::fromUTF8("IMAGER \u00B7 STEREO FIELD"), 14, 8, (int)bounds.getWidth() - 28, 14, juce::Justification::topLeft);
 
@@ -101,7 +101,7 @@ void ImagerPanel::drawGoniometer(juce::Graphics& g, juce::Rectangle<float> area)
     // Low-signal caption per Design — no scatter, just a dim inline label.
     if (rmsDb < -60.0f) {
         g.setColour(juce::Colour(mst::theme::textLow).withAlpha(0.7f));
-        g.setFont(juce::Font(10.0f).boldened());
+        g.setFont(juce::Font(juce::FontOptions(10.0f)).boldened());
         g.drawText("INPUT TOO QUIET",
                    area.withSizeKeepingCentre(area.getWidth(), 20).toNearestInt(),
                    juce::Justification::centred);

@@ -38,7 +38,7 @@ void DynamicsPanel::paint(juce::Graphics& g) {
     g.drawRoundedRectangle(bounds, 8.0f, 1.0f);
 
     // Header
-    g.setFont(juce::Font(11.0f).boldened());
+    g.setFont(juce::Font(juce::FontOptions(11.0f)).boldened());
     g.setColour(juce::Colour(mst::theme::textHigh));
     g.drawText(juce::String::fromUTF8("DYNAMICS \u00B7 MULTI-MODE"), 14, 8, (int)bounds.getWidth() - 28, 14, juce::Justification::topLeft);
 
@@ -47,7 +47,7 @@ void DynamicsPanel::paint(juce::Graphics& g) {
     drawTransferCurve(g, visualArea);
 
     // Knob Labels
-    g.setFont(juce::Font(9.0f));
+    g.setFont(juce::Font(juce::FontOptions(9.0f)));
     g.setColour(juce::Colour(mst::theme::textMid));
     auto drawLabel = [&](juce::Slider& k, juce::String text) {
         g.drawText(text, k.getBounds().withY(k.getBottom() - 5).withHeight(15), juce::Justification::centred);
@@ -82,7 +82,7 @@ void DynamicsPanel::paint(juce::Graphics& g) {
         g.fillRect(meter.getX() + 3, y, meter.getWidth() - 6, segH);
     }
     // "GR" label
-    g.setFont(juce::Font(7.0f).boldened());
+    g.setFont(juce::Font(juce::FontOptions(7.0f)).boldened());
     g.setColour(juce::Colour(mst::theme::textLow));
     g.drawText("GR", meter.toNearestInt().removeFromBottom(12), juce::Justification::centred);
 }

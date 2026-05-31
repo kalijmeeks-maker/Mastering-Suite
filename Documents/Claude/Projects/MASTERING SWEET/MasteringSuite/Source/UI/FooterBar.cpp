@@ -38,7 +38,7 @@ void FooterBar::paint(juce::Graphics& g) {
     juce::String leftText = juce::String::fromUTF8("IN ") + inStr + " dB \u00B7 OUT " + outStr + " dB \u00B7 SR "
                          + juce::String(sr) + "K \u00B7 BUF " + juce::String(buf);
 
-    g.setFont(juce::Font(9.0f));
+    g.setFont(juce::Font(juce::FontOptions(9.0f)));
     g.setColour(juce::Colour(mst::theme::textMid));
     g.drawText(leftText, 14, 0, 300, (int)bounds.getHeight(), juce::Justification::centredLeft);
 
@@ -80,7 +80,7 @@ void FooterBar::paint(juce::Graphics& g) {
     densityToggle->setAlpha(toggleAlpha);
 
     if (toastAlpha > 0.01f) {
-        g.setFont(juce::Font(11.0f).boldened());
+        g.setFont(juce::Font(juce::FontOptions(11.0f)).boldened());
         // Leading colored dot (7 px, currentColor glow handled by drawing a
         // soft inner circle).
         const float cx = bounds.getCentreX() - 78.0f;
@@ -104,7 +104,7 @@ void FooterBar::paint(juce::Graphics& g) {
     float cpu = processor.getCPUUsage() * 100.0f;
     juce::String metrics = juce::String::fromUTF8("DSP ") + juce::String(cpu, 1)
                          + juce::String::fromUTF8("% \u00B7 CPU ") + juce::String(cpu * 0.8f, 1) + "%";
-    g.setFont(juce::Font(9.0f));
+    g.setFont(juce::Font(juce::FontOptions(9.0f)));
     g.setColour(juce::Colour(mst::theme::textMid));
     g.drawText(metrics, bounds.getRight() - 270.0f, 0, 130, (int)bounds.getHeight(), juce::Justification::centredLeft);
 
